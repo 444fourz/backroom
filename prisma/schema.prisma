@@ -1,0 +1,488 @@
+// ClubCore data model — first-draft scaffold.
+// See C:\Users\nayee\.claude\plans\logical-doodling-puppy.md for the design rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Auth.js (NextAuth v4) required models ----------
+// Account/VerificationToken are unused while we only have a Credentials provider,
+// but the Prisma adapter's TypeScript surface expects them to exist.
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- Identity ----------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+
+  memberships           Membership[]
+  guardianOf            GuardianPlayer[]
+  createdEvents         Event[]                @relation("EventCreatedBy")
+  recordedAttendance    Attendance[]           @relation("AttendanceRecordedBy")
+  respondedAvailability AvailabilityResponse[] @relation("AvailabilityRespondedBy")
+  recordedPayments      Payment[]              @relation("PaymentRecordedBy")
+  grantedConsents       Consent[]              @relation("ConsentGrantedBy")
+  credentials           Credential[]
+  uploadedDocuments     Document[]
+  auditLogEntries       AuditLog[]
+}
+
+// ---------- Club structure ----------
+
+enum Sport {
+  FOOTBALL
+}
+
+model Club {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  sport     Sport    @default(FOOTBALL)
+  createdAt DateTime @default(now())
+
+  seasons     Season[]
+  teams       Team[]
+  memberships Membership[]
+  players     Player[]
+  events      Event[]
+  invoices    Invoice[]
+  credentials Credential[]
+  documents   Document[]
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  clubId    String
+  label     String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+
+  club              Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  invoices          Invoice[]
+  registrationForms RegistrationForm[]
+  consents          Consent[]
+
+  @@unique([clubId, label])
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  clubId    String
+  name      String
+  ageGroup  String
+  createdAt DateTime @default(now())
+
+  club        Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  players     Player[]
+  events      Event[]
+  memberships Membership[]
+
+  @@unique([clubId, name])
+}
+
+enum MembershipRole {
+  ADMIN
+  TREASURER
+  COACH
+  GUARDIAN
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  userId    String
+  clubId    String
+  teamId    String?
+  role      MembershipRole
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId, teamId, role])
+  @@index([clubId])
+  @@index([userId])
+}
+
+// ---------- Players & guardians ----------
+
+enum PlayerStatus {
+  ACTIVE
+  LEFT
+}
+
+model Player {
+  id          String       @id @default(cuid())
+  clubId      String
+  teamId      String
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  status      PlayerStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+
+  club      Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  team      Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  medical   PlayerMedicalInfo?
+  guardians GuardianPlayer[]
+
+  availabilityResponses AvailabilityResponse[]
+  attendance            Attendance[]
+  invoices              Invoice[]
+  registrationForms     RegistrationForm[]
+  consents              Consent[]
+
+  @@index([clubId])
+  @@index([teamId])
+}
+
+// Deliberately a separate table (not fields on Player) so the data-access layer
+// can omit it entirely from any query built for a non-medical role — the RBAC
+// boundary is enforced by what the query fetches, not by hiding it in the UI.
+model PlayerMedicalInfo {
+  id                    String  @id @default(cuid())
+  playerId              String  @unique
+  allergies             String?
+  conditions            String?
+  emergencyContactName  String
+  emergencyContactPhone String
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model GuardianPlayer {
+  id               String  @id @default(cuid())
+  guardianUserId   String
+  playerId         String
+  relationship     String
+  isPrimaryContact Boolean @default(false)
+
+  guardian User   @relation(fields: [guardianUserId], references: [id], onDelete: Cascade)
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([guardianUserId, playerId])
+  @@index([playerId])
+}
+
+// ---------- Fixtures, availability, attendance ----------
+
+enum EventType {
+  MATCH
+  TRAINING
+  TOURNAMENT
+  SOCIAL
+}
+
+model Event {
+  id              String    @id @default(cuid())
+  clubId          String
+  teamId          String
+  type            EventType
+  title           String
+  opponent        String?
+  venueName       String
+  venueAddress    String?
+  venueMapUrl     String?
+  meetTime        DateTime?
+  startTime       DateTime
+  endTime         DateTime?
+  kitColour       String?
+  isRecurring     Boolean   @default(false)
+  recurrenceRule  String?
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+
+  club         Club                   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  team         Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy    User                   @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
+  availability AvailabilityResponse[]
+  attendance   Attendance[]
+
+  @@index([clubId])
+  @@index([teamId])
+  @@index([startTime])
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  MAYBE
+  NO_RESPONSE
+}
+
+model AvailabilityResponse {
+  id                String             @id @default(cuid())
+  eventId           String
+  playerId          String
+  respondedByUserId String?
+  status            AvailabilityStatus @default(NO_RESPONSE)
+  respondedAt       DateTime?
+  note              String?
+
+  event       Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  player      Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  respondedBy User?  @relation("AvailabilityRespondedBy", fields: [respondedByUserId], references: [id])
+
+  @@unique([eventId, playerId])
+  @@index([playerId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id               String           @id @default(cuid())
+  eventId          String
+  playerId         String
+  status           AttendanceStatus
+  recordedByUserId String
+  recordedAt       DateTime         @default(now())
+
+  event      Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  player     Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  recordedBy User   @relation("AttendanceRecordedBy", fields: [recordedByUserId], references: [id])
+
+  @@unique([eventId, playerId])
+  @@index([playerId])
+}
+
+// ---------- Payments & club finance ----------
+
+enum InvoiceType {
+  SUBS
+  MATCH_FEE
+  KIT
+  TOURNAMENT
+  OTHER
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  WAIVED
+  PARTIAL
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  clubId        String
+  playerId      String
+  seasonId      String
+  type          InvoiceType
+  description   String
+  amountPence   Int
+  dueDate       DateTime
+  status        InvoiceStatus @default(PENDING)
+  discountPence Int?
+  waivedReason  String?
+  createdAt     DateTime      @default(now())
+
+  club     Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  player   Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  season   Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([clubId])
+  @@index([playerId])
+  @@index([status])
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  invoiceId        String
+  amountPence      Int
+  method           PaymentMethod
+  paidAt           DateTime      @default(now())
+  recordedByUserId String
+  externalRef      String? // placeholder for a future Stripe/GoCardless payment intent id
+
+  invoice    Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  recordedBy User    @relation("PaymentRecordedBy", fields: [recordedByUserId], references: [id])
+
+  @@index([invoiceId])
+}
+
+// ---------- Registration & consent ----------
+
+enum RegistrationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+}
+
+model RegistrationForm {
+  id          String             @id @default(cuid())
+  playerId    String
+  seasonId    String
+  status      RegistrationStatus @default(NOT_STARTED)
+  submittedAt DateTime?
+  dataJson    Json?
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, seasonId])
+}
+
+enum ConsentType {
+  PHOTO
+  MEDICAL_TREATMENT
+  TRAVEL
+  CODE_OF_CONDUCT
+}
+
+model Consent {
+  id              String      @id @default(cuid())
+  playerId        String
+  seasonId        String
+  type            ConsentType
+  granted         Boolean
+  grantedByUserId String
+  grantedAt       DateTime    @default(now())
+  policyVersion   String
+
+  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  season    Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  grantedBy User   @relation("ConsentGrantedBy", fields: [grantedByUserId], references: [id])
+
+  @@unique([playerId, seasonId, type])
+}
+
+// ---------- Safeguarding & credentials ----------
+
+enum CredentialType {
+  DBS
+  FIRST_AID
+  COACHING_CERT
+  SAFEGUARDING_TRAINING
+  OTHER
+}
+
+model Credential {
+  id              String         @id @default(cuid())
+  userId          String
+  clubId          String
+  type            CredentialType
+  referenceNumber String?
+  issueDate       DateTime
+  expiryDate      DateTime
+  documentId      String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club     Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  document Document? @relation(fields: [documentId], references: [id])
+
+  @@index([clubId])
+  @@index([userId])
+  @@index([expiryDate])
+}
+
+// ---------- Club management ----------
+
+enum DocumentCategory {
+  POLICY
+  CONSENT_FORM
+  CREDENTIAL_PROOF
+  OTHER
+}
+
+model Document {
+  id               String           @id @default(cuid())
+  clubId           String
+  uploadedByUserId String
+  title            String
+  category         DocumentCategory
+  fileUrl          String
+  visibility       MembershipRole[]
+  createdAt        DateTime         @default(now())
+
+  club        Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  uploadedBy  User         @relation(fields: [uploadedByUserId], references: [id])
+  credentials Credential[]
+
+  @@index([clubId])
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  actor User @relation(fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+}

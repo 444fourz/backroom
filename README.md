@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClubCore
 
-## Getting Started
+Club management platform for grassroots sports clubs — this is the first-draft
+scaffold of the product app (not the marketing site). See
+`C:\Users\nayee\.claude\plans\logical-doodling-puppy.md` for the design plan.
 
-First, run the development server:
+Breadth over depth: every module below has a real, role-scoped, seeded shell.
+Two things are wired up fully end to end as a template for the rest: creating
+a fixture, and a guardian responding to an availability request.
+
+## Stack
+
+Next.js 16 (App Router) + TypeScript · PostgreSQL + Prisma 7 · Auth.js v4
+(Credentials provider, JWT sessions) · Tailwind + shadcn/ui · Zod
+
+## Getting started
+
+Prerequisites: Node 20+, Docker Desktop running.
 
 ```bash
+npm install
+docker compose up -d          # starts local Postgres
+npx prisma migrate dev        # applies the schema
+npx prisma db seed            # seeds one demo club with every role
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 — you'll land on `/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Seeded accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Every seeded user shares the same dev password: `clubcore-dev-2026` (see
+`SEED_USER_PASSWORD` in `.env`).
 
-## Learn More
+| Role | Email |
+|---|---|
+| Admin | admin@clubcore.dev |
+| Treasurer | treasurer@clubcore.dev |
+| Coach (Under 10s) | coach.u10@clubcore.dev |
+| Coach (Under 12s) | coach.u12@clubcore.dev |
+| Guardian | guardian1@clubcore.dev … guardian8@clubcore.dev |
 
-To learn more about Next.js, take a look at the following resources:
+Log in as different roles to see the role-based access control boundaries —
+e.g. a treasurer is redirected away from `/safeguarding` and `/players`, a
+coach only ever sees their own team, and a guardian only ever sees their own
+children.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How access control works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Every route and every database query is scoped by the caller's **active
+membership** (which club/team/role they're currently acting as), never by a
+bare user id:
 
-## Deploy on Vercel
+- `src/lib/permissions/policies.ts` — the single source of truth for which
+  role has which capability (e.g. `medical:view`, `payment:manage`).
+- `src/lib/permissions/guard.ts` — route guards; redirect to `/unauthorized`
+  if the caller lacks the capability.
+- `src/lib/data/*.ts` — the data-access layer. This is where the boundary
+  actually holds: a query built for a treasurer never `select`s medical or
+  credential fields in the first place, so a bug in a page component can't
+  leak them.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Known rough edges (first draft, by design)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Payment processing, calendar export, DBS expiry emails, document uploads,
+  and member invites are data-modeled but not wired up — see the plan's
+  "Explicit Deferrals" section.
+- `middleware.ts` uses the deprecated-but-still-supported convention; Next.js
+  16 prefers `proxy.ts` (`npx @next/codemod@canary middleware-to-proxy .` to
+  migrate once the repo is under git).
