@@ -17,11 +17,11 @@ export function TopBar({
   showSwitchClub: boolean;
 }) {
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background/75 px-4 backdrop-blur-md supports-backdrop-filter:bg-background/75 md:px-6">
       <div className="flex items-center gap-2 text-sm">
         <span className="font-medium">{clubName}</span>
         {teamName ? <span className="text-muted-foreground">· {teamName}</span> : null}
-        <Badge variant="secondary" className="ml-2 capitalize">
+        <Badge variant="outline" className="ml-2 border-transparent bg-primary/10 text-primary capitalize">
           {role.toLowerCase()}
         </Badge>
       </div>

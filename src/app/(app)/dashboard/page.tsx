@@ -8,6 +8,7 @@ import { listArrearsForMembership, listInvoicesForMembership } from "@/lib/data/
 import { listCredentialsForMembership, isExpiringSoon } from "@/lib/data/credentials";
 import { listPlayersForMembership } from "@/lib/data/players";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/shared/stat-card";
 
 export default async function DashboardPage() {
   const { user, active } = await requireActiveMembership();
@@ -39,87 +40,27 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming fixtures</CardTitle>
-            <CalendarDays className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{upcomingEvents.length}</div>
-            <CardDescription>
-              <Link href="/fixtures" className="underline underline-offset-2">
-                View fixtures
-              </Link>
-            </CardDescription>
-          </CardContent>
-        </Card>
+        <StatCard href="/fixtures" label="Upcoming fixtures" value={upcomingEvents.length} icon={CalendarDays} />
 
         {roleHasCapability(active.role, "player:view:team") ? (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Players</CardTitle>
-              <Users className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{players.length}</div>
-              <CardDescription>
-                <Link href="/players" className="underline underline-offset-2">
-                  View roster
-                </Link>
-              </CardDescription>
-            </CardContent>
-          </Card>
+          <StatCard href="/players" label="Players" value={players.length} icon={Users} />
         ) : null}
 
         {roleHasCapability(active.role, "payment:manage") ? (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Outstanding arrears</CardTitle>
-              <Wallet className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{arrears.length}</div>
-              <CardDescription>
-                <Link href="/payments/arrears" className="underline underline-offset-2">
-                  View arrears
-                </Link>
-              </CardDescription>
-            </CardContent>
-          </Card>
+          <StatCard href="/payments/arrears" label="Outstanding arrears" value={arrears.length} icon={Wallet} />
         ) : null}
 
         {active.role === "GUARDIAN" ? (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Payments due</CardTitle>
-              <Wallet className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingOwnInvoices.length}</div>
-              <CardDescription>
-                <Link href="/payments" className="underline underline-offset-2">
-                  View payments
-                </Link>
-              </CardDescription>
-            </CardContent>
-          </Card>
+          <StatCard href="/payments" label="Payments due" value={pendingOwnInvoices.length} icon={Wallet} />
         ) : null}
 
         {expiringCredentials.length > 0 ? (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Credentials expiring soon</CardTitle>
-              <ShieldAlert className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{expiringCredentials.length}</div>
-              <CardDescription>
-                <Link href="/safeguarding" className="underline underline-offset-2">
-                  View safeguarding
-                </Link>
-              </CardDescription>
-            </CardContent>
-          </Card>
+          <StatCard
+            href="/safeguarding"
+            label="Credentials expiring soon"
+            value={expiringCredentials.length}
+            icon={ShieldAlert}
+          />
         ) : null}
       </div>
 
@@ -134,7 +75,10 @@ export default async function DashboardPage() {
           ) : (
             <ul className="flex flex-col divide-y">
               {upcomingEvents.map((event) => (
-                <li key={event.id} className="flex items-center justify-between py-2 text-sm">
+                <li
+                  key={event.id}
+                  className="-mx-2 flex items-center justify-between rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/50"
+                >
                   <div>
                     <Link href={`/fixtures/${event.id}`} className="font-medium hover:underline">
                       {event.title}

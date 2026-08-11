@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { Building2, FileText, Users, UsersRound } from "lucide-react";
 
 import { requireCapability } from "@/lib/permissions/guard";
 import { getClubOverview } from "@/lib/data/club";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/shared/stat-card";
 
 export default async function ClubOverviewPage() {
   const { active } = await requireCapability("club:manage");
@@ -18,10 +20,10 @@ export default async function ClubOverviewPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label="Teams" value={club.teams.length} href="/club/teams" />
-        <SummaryCard label="Members" value={club._count.memberships} href="/club/members" />
-        <SummaryCard label="Players" value={club._count.players} href="/players" />
-        <SummaryCard label="Documents" value={club._count.documents} href="/club/documents" />
+        <StatCard href="/club/teams" label="Teams" value={club.teams.length} icon={Building2} />
+        <StatCard href="/club/members" label="Members" value={club._count.memberships} icon={UsersRound} />
+        <StatCard href="/players" label="Players" value={club._count.players} icon={Users} />
+        <StatCard href="/club/documents" label="Documents" value={club._count.documents} icon={FileText} />
       </div>
 
       <Card>
@@ -54,20 +56,5 @@ export default async function ClubOverviewPage() {
         </Button>
       </div>
     </div>
-  );
-}
-
-function SummaryCard({ label, value, href }: { label: string; value: number; href: string }) {
-  return (
-    <Link href={href}>
-      <Card className="transition-colors hover:bg-accent">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{value}</div>
-        </CardContent>
-      </Card>
-    </Link>
   );
 }

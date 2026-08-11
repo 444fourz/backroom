@@ -15,12 +15,14 @@ Next.js 16 (App Router) + TypeScript · PostgreSQL + Prisma 7 · Auth.js v4
 
 ## Getting started
 
-Prerequisites: Node 20+, Docker Desktop running.
+Prerequisites: Node 20+, Docker Desktop running. Full walkthrough (including
+first-time `.env` setup) is in [`requirements.txt`](./requirements.txt) —
+short version, once `.env` exists:
 
 ```bash
 npm install
 docker compose up -d          # starts local Postgres
-npx prisma migrate dev        # applies the schema
+npx prisma migrate deploy     # applies the schema
 npx prisma db seed            # seeds one demo club with every role
 npm run dev
 ```

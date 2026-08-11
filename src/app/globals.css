@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-heading);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,6 +49,14 @@
 }
 
 :root {
+  /* Body copy uses Geist (loaded in layout.tsx); headings use Plus Jakarta
+     Sans for more character. Both are bound here, not in @theme, because
+     next/font only exposes --font-geist-sans/--font-plus-jakarta-sans as
+     plain CSS variables on <html> — Tailwind's font-sans/font-heading
+     utilities need --font-sans/--font-heading to point at them. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-plus-jakarta-sans), var(--font-sans);
+
   /* ClubCore brand: white background, black text, green accents (from the logo) */
   --background: #ffffff;
   --foreground: #111111;
@@ -127,5 +135,13 @@
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading tracking-tight;
   }
 }

@@ -1,0 +1,90 @@
+ClubCore — setup requirements
+==============================
+
+This is a Node.js/TypeScript project, not Python — there's no pip install
+step. This file is a plain-language setup checklist for anyone cloning the
+repo, named requirements.txt because that's the file people know to look for.
+The real dependency manifest is package.json (handled by `npm install` below).
+
+
+1. INSTALL THESE FIRST
+-----------------------
+- Node.js 20 or newer        https://nodejs.org
+  (npm comes bundled with Node — no separate install needed)
+- Docker Desktop, running    https://www.docker.com/products/docker-desktop
+  (used only to run a local Postgres database — the app itself does not
+  run inside Docker)
+- Git
+
+
+2. CLONE AND INSTALL DEPENDENCIES
+----------------------------------
+  git clone https://github.com/444fourz/clubcore.git
+  cd clubcore
+  npm install
+
+
+3. SET UP YOUR .env FILE
+--------------------------
+.env is gitignored on purpose (it can hold secrets), so it does NOT come
+down with the clone. Create your own from the committed template:
+
+  cp .env.example .env
+
+Then generate a real value for NEXTAUTH_SECRET (the template ships with it
+blank) and paste it into .env:
+
+  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+Everything else in .env.example already has working default values for
+local development — DATABASE_URL matches docker-compose.yml, and
+SEED_USER_PASSWORD is the shared dev login password (see step 6).
+
+
+4. START THE LOCAL DATABASE
+------------------------------
+  docker compose up -d
+
+This starts a postgres:16 container matching the DATABASE_URL in .env.
+Leave it running in the background — `docker compose down` stops it,
+`docker compose down -v` also wipes its data if you ever want a clean slate.
+
+
+5. APPLY THE DATABASE SCHEMA
+-------------------------------
+  npx prisma migrate deploy
+
+(Use `npx prisma migrate dev` instead only if you intend to make schema
+changes — `migrate deploy` just applies what's already committed.)
+
+
+6. SEED DEMO DATA
+--------------------
+  npx prisma db seed
+
+This creates one demo club ("Aston Rovers FC") with an admin, a treasurer,
+two coaches, eight guardians, and ~10 players — enough to log in as every
+role and see the permission boundaries for yourself. Every seeded account
+shares the password set as SEED_USER_PASSWORD in your .env (default:
+clubcore-dev-2026). Full list of seeded emails is in README.md.
+
+
+7. RUN THE APP
+-----------------
+  npm run dev
+
+Open http://localhost:3000 — you'll land on /login.
+
+
+TO VERIFY EVERYTHING WORKS
+-----------------------------
+  npm run build
+
+Should complete with no type errors. If it does, and `npm run dev` boots
+and you can log in, the setup is good.
+
+
+SEE ALSO
+-----------
+README.md — architecture notes, seeded account table, how the
+role-based access control actually works.

@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/db/prisma";
+import { writeAuditLog } from "@/lib/audit/log";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -34,6 +35,13 @@ export const authOptions: NextAuthOptions = {
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) return null;
+
+        await writeAuditLog({
+          actorUserId: user.id,
+          action: "auth.login",
+          entityType: "User",
+          entityId: user.id,
+        });
 
         return { id: user.id, email: user.email, name: user.name };
       },

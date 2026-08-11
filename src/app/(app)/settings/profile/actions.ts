@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { writeAuditLog } from "@/lib/audit/log";
 
 const updateProfileSchema = z.object({
   name: z.string().trim().min(2, "Name is too short").max(120),
@@ -19,6 +20,14 @@ export async function updateProfileAction(formData: FormData) {
   await prisma.user.update({
     where: { id: user.id },
     data: { name: parsed.data.name },
+  });
+
+  await writeAuditLog({
+    actorUserId: user.id,
+    action: "profile.updated",
+    entityType: "User",
+    entityId: user.id,
+    metadata: { name: parsed.data.name },
   });
 
   revalidatePath("/settings/profile");

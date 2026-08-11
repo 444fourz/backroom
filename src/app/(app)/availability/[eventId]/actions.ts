@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { availabilityResponseSchema } from "@/lib/validation/event.schema";
+import { writeAuditLog } from "@/lib/audit/log";
 
 export async function respondAvailabilityAction(formData: FormData) {
   const { user, active } = await requireActiveMembership();
@@ -34,6 +35,14 @@ export async function respondAvailabilityAction(formData: FormData) {
       respondedByUserId: user.id,
       respondedAt: new Date(),
     },
+  });
+
+  await writeAuditLog({
+    actorUserId: user.id,
+    action: "availability.responded",
+    entityType: "AvailabilityResponse",
+    entityId: `${parsed.data.eventId}:${parsed.data.playerId}`,
+    metadata: { status: parsed.data.status },
   });
 
   revalidatePath(`/availability/${parsed.data.eventId}`);

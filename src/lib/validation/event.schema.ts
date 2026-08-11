@@ -18,3 +18,9 @@ export const availabilityResponseSchema = z.object({
   playerId: z.string().min(1),
   status: z.enum(["AVAILABLE", "UNAVAILABLE", "MAYBE"]),
 });
+
+export const attendanceRecordSchema = z.object({
+  eventId: z.string().min(1),
+  playerId: z.string().min(1),
+  status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED"]),
+});

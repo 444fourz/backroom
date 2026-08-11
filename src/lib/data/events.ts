@@ -77,3 +77,35 @@ export async function getGuardianAvailabilityForEvent(guardianUserId: string, ev
     response: child.availabilityResponses[0] ?? null,
   }));
 }
+
+/**
+ * The full team roster for an event, each paired with their existing
+ * attendance record (or null if not yet marked) — used by the attendance
+ * marking UI on the fixture detail page. Only ADMIN/COACH ever call this;
+ * scoped the same way as event visibility (coach -> own team, admin -> own
+ * club), and returns null entirely if the event is out of the caller's
+ * scope so a coach can't probe another team's roster via the eventId.
+ */
+export async function getAttendanceRosterForEvent(active: Membership, eventId: string) {
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, ...eventScopeWhere(active) },
+    select: { teamId: true },
+  });
+  if (!event) return null;
+
+  const players = await prisma.player.findMany({
+    where: { teamId: event.teamId, status: "ACTIVE" },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      attendance: { where: { eventId }, take: 1 },
+    },
+    orderBy: { firstName: "asc" },
+  });
+
+  return players.map((player) => ({
+    player: { id: player.id, firstName: player.firstName, lastName: player.lastName },
+    attendance: player.attendance[0] ?? null,
+  }));
+}

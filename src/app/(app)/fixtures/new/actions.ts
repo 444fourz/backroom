@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireCapability } from "@/lib/permissions/guard";
 import { prisma } from "@/lib/db/prisma";
 import { createEventSchema } from "@/lib/validation/event.schema";
+import { writeAuditLog } from "@/lib/audit/log";
 
 function fail(message: string): never {
   redirect(`/fixtures/new?error=${encodeURIComponent(message)}`);
@@ -59,5 +60,13 @@ export async function createEventAction(formData: FormData): Promise<void> {
     },
   });
 
-  redirect(`/fixtures/${event.id}`);
+  await writeAuditLog({
+    actorUserId: user.id,
+    action: "event.created",
+    entityType: "Event",
+    entityId: event.id,
+    metadata: { type: event.type, teamId: event.teamId },
+  });
+
+  redirect(`/fixtures/${event.id}?created=1`);
 }
