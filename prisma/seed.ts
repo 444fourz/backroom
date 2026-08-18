@@ -57,10 +57,23 @@ async function main() {
     });
   }
 
-  const admin = await upsertUser("admin@clubcore.dev", "Priya Admin");
+  const secretary = await upsertUser("secretary@clubcore.dev", "Priya Secretary");
+  const welfare = await upsertUser("welfare@clubcore.dev", "Wendy Welfare");
   const treasurer = await upsertUser("treasurer@clubcore.dev", "Tom Treasurer");
   const coachU10 = await upsertUser("coach.u10@clubcore.dev", "Chris Coach");
   const coachU12 = await upsertUser("coach.u12@clubcore.dev", "Cara Coach");
+
+  // Dev-only superuser: not a real role, just this one account holding every
+  // membership at once so someone testing locally can switch (via
+  // /select-club) into any role's view without five separate logins. Uses
+  // its own password ("admin") rather than SEED_PASSWORD so it's obviously
+  // a throwaway dev credential, not a template for a real account.
+  const adminPasswordHash = await bcrypt.hash("admin", 10);
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@clubcore.dev" },
+    update: { name: "Dev Admin", passwordHash: adminPasswordHash },
+    create: { email: "admin@clubcore.dev", name: "Dev Admin", passwordHash: adminPasswordHash },
+  });
 
   const guardianNames = [
     ["guardian1@clubcore.dev", "Gail Guardian"],
@@ -77,13 +90,18 @@ async function main() {
   // --- Memberships. Prisma's compound-unique `where` input rejects `null`
   // for a nullable key part (teamId), so upsert() can't target this
   // constraint directly when teamId is null — find-then-create instead. ---
-  async function upsertMembership(userId: string, role: "ADMIN" | "TREASURER" | "COACH" | "GUARDIAN", teamId: string | null) {
+  async function upsertMembership(
+    userId: string,
+    role: "SECRETARY" | "WELFARE_OFFICER" | "TREASURER" | "COACH" | "GUARDIAN",
+    teamId: string | null,
+  ) {
     const existing = await prisma.membership.findFirst({ where: { userId, clubId: club.id, teamId, role } });
     if (existing) return existing;
     return prisma.membership.create({ data: { userId, clubId: club.id, teamId, role } });
   }
 
-  await upsertMembership(admin.id, "ADMIN", null);
+  await upsertMembership(secretary.id, "SECRETARY", null);
+  await upsertMembership(welfare.id, "WELFARE_OFFICER", null);
   await upsertMembership(treasurer.id, "TREASURER", null);
   await upsertMembership(coachU10.id, "COACH", u10.id);
   await upsertMembership(coachU12.id, "COACH", u12.id);
@@ -91,10 +109,21 @@ async function main() {
     await upsertMembership(guardian.id, "GUARDIAN", null);
   }
 
+  // Admin holds every role as a separate Membership row — each still scoped
+  // and audited exactly like a real one — so no single request context
+  // silently sees everything; switching roles still goes through
+  // /select-club like it would for any other multi-role user.
+  await upsertMembership(admin.id, "SECRETARY", null);
+  await upsertMembership(admin.id, "WELFARE_OFFICER", null);
+  await upsertMembership(admin.id, "TREASURER", null);
+  await upsertMembership(admin.id, "COACH", u10.id);
+  await upsertMembership(admin.id, "GUARDIAN", null);
+
   // --- Everything below doesn't have a natural unique key to upsert on, so
   // we reset this club's data for these tables and recreate it fresh. Safe
   // for a dev seed; not the pattern you'd use once real data exists. ---
   await prisma.attendance.deleteMany({ where: { event: { clubId: club.id } } });
+  await prisma.matchStat.deleteMany({ where: { event: { clubId: club.id } } });
   await prisma.availabilityResponse.deleteMany({ where: { event: { clubId: club.id } } });
   await prisma.event.deleteMany({ where: { clubId: club.id } });
   await prisma.payment.deleteMany({ where: { invoice: { clubId: club.id } } });
@@ -173,6 +202,18 @@ async function main() {
 
   const allPlayers = [...u10Players, ...u12Players];
 
+  // Give the admin's GUARDIAN membership something to actually see — a
+  // second guardian link on Alfie Baker — since player:view:own would
+  // otherwise return an empty list for that role.
+  await prisma.guardianPlayer.create({
+    data: {
+      guardianUserId: admin.id,
+      playerId: u10Players[0].id,
+      relationship: "Parent",
+      isPrimaryContact: false,
+    },
+  });
+
   // --- Events: 2 past training per team, 1 upcoming match, 1 recurring weekly training ---
   async function createPastTraining(teamId: string, daysAgo: number) {
     return prisma.event.create({
@@ -184,7 +225,7 @@ async function main() {
         venueName: "Aston Rovers Training Ground",
         startTime: daysFromNow(-daysAgo),
         endTime: daysFromNow(-daysAgo),
-        createdByUserId: admin.id,
+        createdByUserId: secretary.id,
       },
     });
   }
@@ -193,6 +234,42 @@ async function main() {
   const u10PastB = await createPastTraining(u10.id, 7);
   const u12PastA = await createPastTraining(u12.id, 14);
   const u12PastB = await createPastTraining(u12.id, 7);
+
+  // A past match with recorded stats, so /stats has something to show and
+  // the fixture detail page demonstrates the "already recorded" state, not
+  // just the empty entry form.
+  const u10PastMatch = await prisma.event.create({
+    data: {
+      clubId: club.id,
+      teamId: u10.id,
+      type: "MATCH",
+      title: "vs Solihull Saints",
+      opponent: "Solihull Saints",
+      venueName: "Aston Rovers Ground",
+      startTime: daysFromNow(-10),
+      kitColour: "Home red",
+      createdByUserId: coachU10.id,
+    },
+  });
+  const u10MatchStatLines = [
+    { goals: 2, assists: 1 },
+    { goals: 1, assists: 0 },
+    { goals: 0, assists: 2 },
+    { goals: 0, assists: 0 },
+    { goals: 1, assists: 1 },
+  ] as const;
+  for (const [index, player] of u10Players.entries()) {
+    const line = u10MatchStatLines[index % u10MatchStatLines.length];
+    await prisma.matchStat.create({
+      data: {
+        eventId: u10PastMatch.id,
+        playerId: player.id,
+        goals: line.goals,
+        assists: line.assists,
+        recordedByUserId: coachU10.id,
+      },
+    });
+  }
 
   const upcomingMatch = await prisma.event.create({
     data: {
@@ -329,7 +406,7 @@ async function main() {
             seasonId: season.id,
             type,
             granted: true,
-            grantedByUserId: guardianLink?.guardianUserId ?? admin.id,
+            grantedByUserId: guardianLink?.guardianUserId ?? secretary.id,
             policyVersion: "2025-1",
           },
         });
@@ -381,28 +458,48 @@ async function main() {
   await prisma.document.create({
     data: {
       clubId: club.id,
-      uploadedByUserId: admin.id,
+      uploadedByUserId: secretary.id,
       title: "Code of Conduct.pdf",
       category: "POLICY",
       fileUrl: "https://example.com/documents/code-of-conduct.pdf",
-      visibility: ["ADMIN", "TREASURER", "COACH", "GUARDIAN"],
+      visibility: ["SECRETARY", "WELFARE_OFFICER", "TREASURER", "COACH", "GUARDIAN"],
     },
   });
   await prisma.document.create({
     data: {
       clubId: club.id,
-      uploadedByUserId: admin.id,
+      uploadedByUserId: secretary.id,
       title: "Photo Consent Policy.pdf",
       category: "CONSENT_FORM",
       fileUrl: "https://example.com/documents/photo-consent-policy.pdf",
-      visibility: ["ADMIN", "GUARDIAN"],
+      visibility: ["SECRETARY", "WELFARE_OFFICER", "GUARDIAN"],
     },
+  });
+
+  // A DBS certificate attached to a coach's record, so the "secretary sees
+  // the expiry date but never the certificate" boundary is exercised by the
+  // seed data rather than only being true in theory.
+  const dbsProof = await prisma.document.create({
+    data: {
+      clubId: club.id,
+      uploadedByUserId: welfare.id,
+      title: "DBS Certificate — Chris Coach.pdf",
+      category: "CREDENTIAL_PROOF",
+      fileUrl: "https://example.com/documents/dbs-chris-coach.pdf",
+      visibility: ["WELFARE_OFFICER"],
+    },
+  });
+  await prisma.credential.updateMany({
+    where: { clubId: club.id, userId: coachU10.id, type: "DBS" },
+    data: { documentId: dbsProof.id },
   });
 
   console.log("Seed complete.");
   console.log(`  Club: ${club.name} (${club.slug})`);
   console.log(`  Dev login password for every seeded user: ${SEED_PASSWORD}`);
-  console.log(`  Admin:      ${admin.email}`);
+  console.log(`  Admin (all roles, password "admin"): ${admin.email}`);
+  console.log(`  Secretary:  ${secretary.email}`);
+  console.log(`  Welfare:    ${welfare.email}`);
   console.log(`  Treasurer:  ${treasurer.email}`);
   console.log(`  Coach U10:  ${coachU10.email}`);
   console.log(`  Coach U12:  ${coachU12.email}`);

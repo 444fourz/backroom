@@ -24,3 +24,10 @@ export const attendanceRecordSchema = z.object({
   playerId: z.string().min(1),
   status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED"]),
 });
+
+export const matchStatRecordSchema = z.object({
+  eventId: z.string().min(1),
+  playerId: z.string().min(1),
+  goals: z.coerce.number().int("Whole numbers only").min(0, "Can't be negative").max(99),
+  assists: z.coerce.number().int("Whole numbers only").min(0, "Can't be negative").max(99),
+});

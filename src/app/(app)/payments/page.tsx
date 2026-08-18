@@ -24,7 +24,7 @@ export default async function PaymentsPage() {
   const { active } = await requireAnyCapability(["payment:view:all", "payment:view:own"]);
 
   const invoices = await listInvoicesForMembership(active);
-  const isTreasurerView = active.role === "ADMIN" || active.role === "TREASURER";
+  const isTreasurerView = active.role === "TREASURER";
 
   return (
     <div className="flex flex-col gap-4">

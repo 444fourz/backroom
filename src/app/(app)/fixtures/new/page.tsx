@@ -22,7 +22,7 @@ export default async function NewFixturePage({
   const { active } = await requireCapability("event:create");
   const { error } = await searchParams;
 
-  const teams = active.role === "ADMIN" ? await listTeamsForClub(active) : [];
+  const teams = active.role === "SECRETARY" ? await listTeamsForClub(active) : [];
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
@@ -40,7 +40,7 @@ export default async function NewFixturePage({
           <form action={createEventAction} className="flex flex-col gap-4">
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-            {active.role === "ADMIN" ? (
+            {active.role === "SECRETARY" ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="teamId">Team</Label>
                 <Select name="teamId" required>

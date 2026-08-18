@@ -23,7 +23,8 @@ const PLAYER_LIST_FIELDS = {
 
 export async function listPlayersForMembership(active: Membership) {
   switch (active.role) {
-    case "ADMIN":
+    case "SECRETARY":
+    case "WELFARE_OFFICER":
       return prisma.player.findMany({
         where: { clubId: active.clubId },
         select: PLAYER_LIST_FIELDS,
@@ -52,29 +53,61 @@ export async function listPlayersForMembership(active: Membership) {
 }
 
 /**
+ * Same visibility rule as getPlayerForMembership, factored out so any
+ * data-access function needing "is this player in scope for this caller"
+ * (e.g. stat totals) enforces it identically rather than re-deriving it.
+ */
+export function playerScopeWhere(active: Membership, playerId: string) {
+  return active.role === "SECRETARY" || active.role === "WELFARE_OFFICER"
+    ? { id: playerId, clubId: active.clubId }
+    : active.role === "COACH"
+      ? { id: playerId, teamId: active.teamId ?? "__none__" }
+      : active.role === "GUARDIAN"
+        ? { id: playerId, guardians: { some: { guardianUserId: active.userId } } }
+        : { id: "__none__" }; // TREASURER and anything else: no access
+}
+
+/**
  * Fetch a single player, scoped to what this membership is allowed to see.
  * Returns null if the player doesn't exist *or* is out of scope — the
  * caller can't tell those apart, which is the point.
  */
 export async function getPlayerForMembership(active: Membership, playerId: string) {
+  // A guardian always sees their own child's medical record. Everyone else
+  // needs medical:view — which the secretary and treasurer deliberately
+  // lack, per the safeguarding page's published role table.
   const canSeeMedical =
     active.role === "GUARDIAN" || roleHasCapability(active.role, "medical:view");
 
-  const scopeWhere =
-    active.role === "ADMIN"
-      ? { id: playerId, clubId: active.clubId }
-      : active.role === "COACH"
-        ? { id: playerId, teamId: active.teamId ?? "__none__" }
-        : active.role === "GUARDIAN"
-          ? { id: playerId, guardians: { some: { guardianUserId: active.userId } } }
-          : { id: "__none__" }; // TREASURER and anything else: no access
-
   return prisma.player.findFirst({
-    where: scopeWhere,
+    where: playerScopeWhere(active, playerId),
     include: {
       medical: canSeeMedical,
       guardians: { include: { guardian: { select: { id: true, name: true, email: true } } } },
       team: true,
     },
   });
+}
+
+/**
+ * Club guardians not yet linked to this player — the candidate list when a
+ * secretary links someone new. Restricted to people who already hold a
+ * GUARDIAN role at this club, so linking can never reach an arbitrary
+ * account.
+ */
+export async function listLinkableGuardians(active: Membership, playerId: string) {
+  if (active.role !== "SECRETARY") return [];
+
+  const memberships = await prisma.membership.findMany({
+    where: {
+      clubId: active.clubId,
+      role: "GUARDIAN",
+      status: "ACTIVE",
+      user: { guardianOf: { none: { playerId } } },
+    },
+    include: { user: { select: { id: true, name: true, email: true } } },
+    orderBy: { user: { name: "asc" } },
+  });
+
+  return memberships.map((membership) => membership.user);
 }

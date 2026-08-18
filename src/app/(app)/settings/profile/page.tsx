@@ -19,7 +19,7 @@ export default async function ProfileSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Your details</CardTitle>
-          <CardDescription>Email changes aren&apos;t available yet — contact your club admin.</CardDescription>
+          <CardDescription>Email changes aren&apos;t available yet — ask your club secretary.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={updateProfileAction} className="flex flex-col gap-4">

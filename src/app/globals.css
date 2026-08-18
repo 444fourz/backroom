@@ -49,47 +49,49 @@
 }
 
 :root {
-  /* Body copy uses Geist (loaded in layout.tsx); headings use Plus Jakarta
-     Sans for more character. Both are bound here, not in @theme, because
-     next/font only exposes --font-geist-sans/--font-plus-jakarta-sans as
-     plain CSS variables on <html> — Tailwind's font-sans/font-heading
-     utilities need --font-sans/--font-heading to point at them. */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-plus-jakarta-sans), var(--font-sans);
+  /* Type matches the marketing site: Newsreader for headings, Public Sans
+     for body. Bound here rather than in @theme because next/font exposes
+     only --font-newsreader/--font-public-sans on <html>, and Tailwind's
+     font-sans/font-heading utilities read --font-sans/--font-heading. */
+  --font-sans: var(--font-public-sans), Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-newsreader), Georgia, serif;
 
-  /* ClubCore brand: white background, black text, green accents (from the logo) */
+  /* Palette is the marketing site's, to the hex. See its CLAUDE.md:
+     white background, near-black #191A17 text, ONE accent (#0F6E56),
+     faint tints #F4F8F5 / #EFF4F0, hairline borders #E0E1DC. */
   --background: #ffffff;
-  --foreground: #111111;
+  --foreground: #191a17;
   --card: #ffffff;
-  --card-foreground: #111111;
+  --card-foreground: #191a17;
   --popover: #ffffff;
-  --popover-foreground: #111111;
-  --primary: #1b6e5c;
+  --popover-foreground: #191a17;
+  --primary: #0f6e56;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: #111111;
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: #eaf7f2;
-  --accent-foreground: #1b6e5c;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #3fb88f;
-  --chart-1: #1b6e5c;
-  --chart-2: #3fb88f;
-  --chart-3: oklch(0.556 0 0);
-  --chart-4: oklch(0.439 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --secondary: #f4f8f5;
+  --secondary-foreground: #191a17;
+  --muted: #f4f8f5;
+  --muted-foreground: #6b6e66;
+  --accent: #eff4f0;
+  --accent-foreground: #0f6e56;
+  --destructive: #b23a2e;
+  --border: #e0e1dc;
+  --input: #c9ccc3;
+  --ring: #0f6e56;
+  --chart-1: #0f6e56;
+  --chart-2: #0b5442;
+  --chart-3: #6b6e66;
+  --chart-4: #41443d;
+  --chart-5: #c9ccc3;
+  /* Site uses 2-3px radii on flat surfaces, not pill-rounded cards. */
+  --radius: 0.1875rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #111111;
-  --sidebar-primary: #1b6e5c;
+  --sidebar-foreground: #191a17;
+  --sidebar-primary: #0f6e56;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eaf7f2;
-  --sidebar-accent-foreground: #1b6e5c;
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #3fb88f;
+  --sidebar-accent: #eff4f0;
+  --sidebar-accent-foreground: #0f6e56;
+  --sidebar-border: #e0e1dc;
+  --sidebar-ring: #0f6e56;
 }
 
 .dark {
@@ -136,12 +138,15 @@
   html {
     @apply font-sans;
   }
+  /* Newsreader is used at regular weight on the marketing site — headings
+     read as serif, not bold. font-normal here overrides the font-semibold
+     utilities on individual page headings. */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    @apply font-heading tracking-tight;
+    @apply font-heading font-normal tracking-tight;
   }
 }

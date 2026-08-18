@@ -36,16 +36,43 @@ Every seeded user shares the same dev password: `clubcore-dev-2026` (see
 
 | Role | Email |
 |---|---|
-| Admin | admin@clubcore.dev |
+| Secretary | secretary@clubcore.dev |
+| Welfare officer | welfare@clubcore.dev |
 | Treasurer | treasurer@clubcore.dev |
 | Coach (Under 10s) | coach.u10@clubcore.dev |
 | Coach (Under 12s) | coach.u12@clubcore.dev |
 | Guardian | guardian1@clubcore.dev … guardian8@clubcore.dev |
 
-Log in as different roles to see the role-based access control boundaries —
-e.g. a treasurer is redirected away from `/safeguarding` and `/players`, a
-coach only ever sees their own team, and a guardian only ever sees their own
-children.
+`admin@clubcore.dev` / password `admin` is a dev-only account that holds
+every role above as a separate membership on the same club — use
+[/select-club](http://localhost:3000/select-club) to switch between them.
+It doesn't bypass the role boundaries below; it just gives one login all
+five memberships to switch into instead of five separate logins.
+
+## What each role can see
+
+These boundaries are a published promise, not an internal preference — the
+marketing site's safeguarding page shows this table to prospective clubs.
+**If you change one, change both.**
+
+| | Secretary | Welfare officer | Treasurer | Coach | Guardian |
+|---|---|---|---|---|---|
+| Registration & consent | ✅ club-wide | ✅ club-wide | ❌ | ❌ | ✅ own children |
+| Medical notes | ❌ | ✅ club-wide | ❌ | ✅ own team | ✅ own children |
+| DBS/certificate **status** | ✅ | ✅ | ❌ | ✅ own only | ❌ |
+| DBS **certificate itself** | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Payments & arrears | ❌ | ❌ | ✅ club-wide | ❌ | ✅ own family |
+| Club management | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Create fixtures | ✅ any team | ❌ | ❌ | ✅ own team | ❌ |
+
+Two boundaries worth understanding, because they're the ones a welfare
+officer will ask about:
+
+- **A secretary runs the club but never opens a medical note**, and sees only
+  whether a DBS is in date — never the certificate. Both are enforced by the
+  query never selecting those fields for that role, not by hiding them in the UI.
+- **A welfare officer sees all safeguarding and medical data but no money at
+  all** — not even whether a family is in arrears.
 
 ## How access control works
 
@@ -61,6 +88,22 @@ bare user id:
   actually holds: a query built for a treasurer never `select`s medical or
   credential fields in the first place, so a bug in a page component can't
   leak them.
+
+## Where the app still differs from the marketing site
+
+The site describes a few things that don't exist here yet. Tracked, not forgotten:
+
+- **Self-serve club sign-up and email invites.** The site's onboarding story
+  is "secretary invites by email → member downloads app → gets a role". There
+  is currently no way to create a club or invite anyone from inside the app;
+  clubs only exist via `prisma db seed`.
+- **Free / Club / Pro subscription tiers.** Nothing tracks which plan a club is
+  on. (Distinct from the `Invoice`/`Payment` models, which are *members paying
+  the club*, not *the club paying ClubCore*.)
+- **A player login for ages 13+.** Deliberately not built — giving a minor
+  their own credentials is a safeguarding decision, not an engineering default.
+- **Native iOS/Android apps.** The site says "in review with the app stores";
+  this is a web app. PWA first, React Native later.
 
 ## Known rough edges (first draft, by design)
 

@@ -24,9 +24,9 @@ export default async function RegistrationPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Registration</h1>
         <p className="text-sm text-muted-foreground">
-          {active.role === "ADMIN"
-            ? "Season registration and consent completion across the club."
-            : "Your children's season registration and consents."}
+          {active.role === "GUARDIAN"
+            ? "Your children's season registration and consents."
+            : "Season registration and consent completion across the club."}
         </p>
       </div>
 

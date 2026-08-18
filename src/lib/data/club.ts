@@ -2,7 +2,7 @@ import type { Membership } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 
-/** All of these are ADMIN-only (guarded via `club:manage` at the page level); they always scope to the caller's own club. */
+/** All of these are SECRETARY-only (guarded via `club:manage` at the page level); they always scope to the caller's own club. */
 
 export async function getClubOverview(active: Membership) {
   return prisma.club.findUnique({

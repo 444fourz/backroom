@@ -1,15 +1,30 @@
 import { notFound } from "next/navigation";
 
 import { requireActiveMembership } from "@/lib/auth/session";
-import { getPlayerForMembership } from "@/lib/data/players";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { roleHasCapability } from "@/lib/permissions/policies";
+import { getPlayerForMembership, listLinkableGuardians } from "@/lib/data/players";
+import { getPlayerStatTotals } from "@/lib/data/stats";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ActionToast } from "@/components/shared/action-toast";
+
+import { linkGuardianAction, unlinkGuardianAction } from "../actions";
+import { LinkGuardianForm, UnlinkGuardianButton } from "../player-forms";
+import { LinkGuardianDialog } from "./guardian-controls";
 
 export default async function PlayerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ playerId: string }>;
+  searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
   const { playerId } = await params;
   const { active } = await requireActiveMembership();
@@ -20,11 +35,21 @@ export default async function PlayerDetailPage({
   // Medical is included by getPlayerForMembership only when the caller is
   // allowed to see it — its presence here, not a role check, is what gates
   // the tab. A guardian viewing their own child always gets it; a coach or
-  // admin only if they hold medical:view.
+  // welfare officer only if they hold medical:view.
   const hasMedical = Boolean(player.medical);
+  const canManage = roleHasCapability(active.role, "club:manage");
+  const linkableGuardians = canManage ? await listLinkableGuardians(active, player.id) : [];
+  const stats = await getPlayerStatTotals(active, player.id);
+  const { error } = await searchParams;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <ActionToast param="ok" message="Saved" />
+      {error ? (
+        <div className="rounded-sm border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           {player.firstName} {player.lastName}
@@ -35,6 +60,7 @@ export default async function PlayerDetailPage({
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="guardians">Guardians</TabsTrigger>
           {hasMedical ? <TabsTrigger value="medical">Medical</TabsTrigger> : null}
         </TabsList>
@@ -53,26 +79,67 @@ export default async function PlayerDetailPage({
           </Card>
         </TabsContent>
 
+        <TabsContent value="stats">
+          <Card>
+            <CardContent className="flex flex-col gap-2 pt-6 text-sm">
+              <Row label="Appearances" value={String(stats?.appearances ?? 0)} />
+              <Row label="Goals" value={String(stats?.goals ?? 0)} />
+              <Row label="Assists" value={String(stats?.assists ?? 0)} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="guardians">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Guardians</CardTitle>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle className="text-base">Guardians</CardTitle>
+                {canManage ? (
+                  <CardDescription>Everyone here can see this child&apos;s record.</CardDescription>
+                ) : null}
+              </div>
+              {canManage ? (
+                <LinkGuardianDialog
+                  form={
+                    <LinkGuardianForm
+                      action={linkGuardianAction}
+                      playerId={player.id}
+                      guardians={linkableGuardians}
+                    />
+                  }
+                />
+              ) : null}
             </CardHeader>
             <CardContent>
-              <ul className="flex flex-col divide-y text-sm">
-                {player.guardians.map((guardianPlayer) => (
-                  <li key={guardianPlayer.id} className="flex items-center justify-between py-2">
-                    <div>
-                      <p>{guardianPlayer.guardian.name}</p>
-                      <p className="text-xs text-muted-foreground">{guardianPlayer.guardian.email}</p>
-                    </div>
-                    <span className="text-muted-foreground">
-                      {guardianPlayer.relationship}
-                      {guardianPlayer.isPrimaryContact ? " · Primary" : ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {player.guardians.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No guardians linked yet.</p>
+              ) : (
+                <ul className="flex flex-col divide-y text-sm">
+                  {player.guardians.map((guardianPlayer) => (
+                    <li key={guardianPlayer.id} className="flex items-center justify-between gap-3 py-2">
+                      <div>
+                        <p>{guardianPlayer.guardian.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {guardianPlayer.guardian.email}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {guardianPlayer.relationship}
+                          {guardianPlayer.isPrimaryContact ? " · Primary" : ""}
+                        </span>
+                        {canManage ? (
+                          <UnlinkGuardianButton
+                            action={unlinkGuardianAction}
+                            playerId={player.id}
+                            guardianUserId={guardianPlayer.guardian.id}
+                          />
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

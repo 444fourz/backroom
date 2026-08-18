@@ -67,12 +67,14 @@ model User {
   guardianOf            GuardianPlayer[]
   createdEvents         Event[]                @relation("EventCreatedBy")
   recordedAttendance    Attendance[]           @relation("AttendanceRecordedBy")
+  recordedMatchStats    MatchStat[]            @relation("MatchStatRecordedBy")
   respondedAvailability AvailabilityResponse[] @relation("AvailabilityRespondedBy")
   recordedPayments      Payment[]              @relation("PaymentRecordedBy")
   grantedConsents       Consent[]              @relation("ConsentGrantedBy")
   credentials           Credential[]
   uploadedDocuments     Document[]
   auditLogEntries       AuditLog[]
+  invitesCreated        Invite[]               @relation("InviteCreatedBy")
 }
 
 // ---------- Club structure ----------
@@ -96,6 +98,7 @@ model Club {
   invoices    Invoice[]
   credentials Credential[]
   documents   Document[]
+  invites     Invite[]
 }
 
 model Season {
@@ -125,12 +128,18 @@ model Team {
   players     Player[]
   events      Event[]
   memberships Membership[]
+  invites     Invite[]
 
   @@unique([clubId, name])
 }
 
+// Roles mirror the split published on the marketing site's safeguarding
+// page — that page promises a secretary cannot open medical notes and a
+// welfare officer cannot see finances, so those are two distinct roles
+// rather than one catch-all admin.
 enum MembershipRole {
-  ADMIN
+  SECRETARY
+  WELFARE_OFFICER
   TREASURER
   COACH
   GUARDIAN
@@ -159,6 +168,32 @@ model Membership {
   @@index([userId])
 }
 
+/**
+ * A pending invitation to join a club in a given role. The secretary creates
+ * these; the token is what the invitee presents at /register-invite/[token].
+ * No email is sent yet (no provider wired up) — the secretary copies the
+ * link. The model is shaped so adding delivery later changes nothing here.
+ */
+model Invite {
+  id              String         @id @default(cuid())
+  clubId          String
+  email           String
+  role            MembershipRole
+  teamId          String?
+  token           String         @unique
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime       @default(now())
+
+  club      Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  team      Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  invitedBy User  @relation("InviteCreatedBy", fields: [invitedByUserId], references: [id])
+
+  @@index([clubId])
+  @@index([email])
+}
+
 // ---------- Players & guardians ----------
 
 enum PlayerStatus {
@@ -183,6 +218,7 @@ model Player {
 
   availabilityResponses AvailabilityResponse[]
   attendance            Attendance[]
+  matchStats            MatchStat[]
   invoices              Invoice[]
   registrationForms     RegistrationForm[]
   consents              Consent[]
@@ -252,6 +288,7 @@ model Event {
   createdBy    User                   @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
   availability AvailabilityResponse[]
   attendance   Attendance[]
+  matchStats   MatchStat[]
 
   @@index([clubId])
   @@index([teamId])
@@ -303,6 +340,27 @@ model Attendance {
 
   @@unique([eventId, playerId])
   @@index([playerId])
+}
+
+// A row only exists once a coach/secretary records something for that player
+// at that match — its existence is the "appearance," goals/assists default
+// to 0 so recording an appearance with no goals doesn't require a second field.
+model MatchStat {
+  id               String   @id @default(cuid())
+  eventId          String
+  playerId         String
+  goals            Int      @default(0)
+  assists          Int      @default(0)
+  recordedByUserId String
+  recordedAt       DateTime @default(now())
+
+  event      Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  player     Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  recordedBy User   @relation("MatchStatRecordedBy", fields: [recordedByUserId], references: [id])
+
+  @@unique([eventId, playerId])
+  @@index([playerId])
+  @@index([eventId])
 }
 
 // ---------- Payments & club finance ----------

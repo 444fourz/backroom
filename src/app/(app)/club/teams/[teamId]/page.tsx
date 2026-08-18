@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { requireCapability } from "@/lib/permissions/guard";
+import { roleLabel } from "@/lib/permissions/policies";
 import { getTeamForClub } from "@/lib/data/club";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,9 +49,7 @@ export default async function TeamDetailPage({
               {team.memberships.map((membership) => (
                 <li key={membership.id} className="flex items-center justify-between py-2">
                   <span>{membership.user.name}</span>
-                  <Badge variant="secondary" className="capitalize">
-                    {membership.role.toLowerCase()}
-                  </Badge>
+                  <Badge variant="secondary">{roleLabel(membership.role)}</Badge>
                 </li>
               ))}
             </ul>

@@ -9,6 +9,7 @@ import {
   Building2,
   Dumbbell,
   Users,
+  Trophy,
   Settings,
 } from "lucide-react";
 
@@ -30,6 +31,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/registration", label: "Registration", icon: ClipboardList, capabilities: ["registration:view:all", "registration:view:own"] },
   { href: "/safeguarding", label: "Safeguarding", icon: ShieldCheck, capabilities: ["credential:view:club", "credential:view:own"] },
   { href: "/players", label: "Players", icon: Users, capabilities: ["player:view:team", "player:view:own"] },
+  { href: "/stats", label: "Stats", icon: Trophy, capabilities: ["player:view:team"] },
   { href: "/coaching", label: "Coaching", icon: Dumbbell, capabilities: ["coaching:view"] },
   { href: "/club", label: "Club", icon: Building2, capabilities: ["club:manage"] },
   { href: "/settings/profile", label: "Settings", icon: Settings, capabilities: ["dashboard:view"] },

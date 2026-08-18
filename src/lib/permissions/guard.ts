@@ -12,7 +12,9 @@ import { roleHasCapability, type Capability } from "./policies";
 export async function requireCapability(capability: Capability) {
   const ctx = await requireActiveMembership();
   if (!roleHasCapability(ctx.active.role, capability)) {
-    redirect("/unauthorized");
+    // Pass the capability along so /unauthorized can name who does own this
+    // area, instead of pointing at a generic "admin" who may not exist.
+    redirect(`/unauthorized?need=${encodeURIComponent(capability)}`);
   }
   return ctx;
 }
@@ -22,7 +24,7 @@ export async function requireAnyCapability(capabilities: Capability[]) {
   const ctx = await requireActiveMembership();
   const allowed = capabilities.some((capability) => roleHasCapability(ctx.active.role, capability));
   if (!allowed) {
-    redirect("/unauthorized");
+    redirect(`/unauthorized?need=${encodeURIComponent(capabilities[0] ?? "")}`);
   }
   return ctx;
 }

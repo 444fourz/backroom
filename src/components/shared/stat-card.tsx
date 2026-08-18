@@ -21,12 +21,14 @@ export function StatCard({
     <Link href={href} className="group block focus-visible:outline-none">
       <Card
         className={cn(
-          "transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:ring-primary/25 group-focus-visible:ring-2 group-focus-visible:ring-ring",
+          // No lift/shadow on hover — the accent border and tint carry it,
+          // per the site's flat-surface rule.
+          "border-t-[3px] border-t-primary transition-colors duration-150 group-hover:bg-accent group-focus-visible:ring-2 group-focus-visible:ring-ring",
           className,
         )}
       >
         <CardContent className="flex items-center gap-3.5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary transition-colors duration-150 group-hover:bg-primary group-hover:text-primary-foreground">
             <Icon className="size-5" />
           </div>
           <div className="flex min-w-0 flex-col">

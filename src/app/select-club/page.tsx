@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { requireCurrentUser } from "@/lib/auth/session";
+import { roleLabel } from "@/lib/permissions/policies";
 import { prisma } from "@/lib/db/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ export default async function SelectClubPage() {
               <Button type="submit" variant="outline" className="w-full justify-between">
                 <span>{membership.club.name}</span>
                 <span className="text-muted-foreground">
-                  {membership.role.toLowerCase()}
+                  {roleLabel(membership.role)}
                   {membership.team ? ` · ${membership.team.name}` : ""}
                 </span>
               </Button>

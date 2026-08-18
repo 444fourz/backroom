@@ -15,10 +15,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+const DESCRIPTION: Record<string, string> = {
+  WELFARE_OFFICER: "DBS and certificate records across the club.",
+  SECRETARY: "Whether each coach's DBS is in date. The certificates themselves aren't shown here.",
+  COACH: "Your own DBS and certificates.",
+};
+
 export default async function SafeguardingPage() {
   // Hard-blocked for treasurer and guardian at the route, not just hidden
   // from nav — this boundary is worth checking by hand per the plan.
-  const { active } = await requireAnyCapability(["credential:view:club", "credential:view:own"]);
+  const { active } = await requireAnyCapability([
+    "credential:view:club",
+    "credential:view:own",
+    "credential:status:view",
+  ]);
   const credentials = await listCredentialsForMembership(active);
 
   return (
@@ -26,7 +36,7 @@ export default async function SafeguardingPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Safeguarding</h1>
         <p className="text-sm text-muted-foreground">
-          {active.role === "ADMIN" ? "DBS and certificate status across the club." : "Your own DBS and certificates."}
+          {DESCRIPTION[active.role] ?? "DBS and certificate status."}
         </p>
       </div>
 

@@ -1,5 +1,8 @@
+import type { MembershipRole } from "@prisma/client";
+
 import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "@/components/shell/user-menu";
+import { roleLabel } from "@/lib/permissions/policies";
 
 export function TopBar({
   userName,
@@ -13,7 +16,7 @@ export function TopBar({
   userEmail: string;
   clubName: string;
   teamName: string | null;
-  role: string;
+  role: MembershipRole;
   showSwitchClub: boolean;
 }) {
   return (
@@ -21,8 +24,8 @@ export function TopBar({
       <div className="flex items-center gap-2 text-sm">
         <span className="font-medium">{clubName}</span>
         {teamName ? <span className="text-muted-foreground">· {teamName}</span> : null}
-        <Badge variant="outline" className="ml-2 border-transparent bg-primary/10 text-primary capitalize">
-          {role.toLowerCase()}
+        <Badge variant="outline" className="ml-2 border-transparent bg-primary/10 text-primary">
+          {roleLabel(role)}
         </Badge>
       </div>
       <UserMenu name={userName} email={userEmail} showSwitchClub={showSwitchClub} />

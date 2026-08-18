@@ -17,7 +17,7 @@ export default async function LoginPage() {
         <CardHeader>
           <Image src="/logo-full.png" alt="ClubCore" width={314} height={79} className="mb-2 h-8 w-auto" priority />
           <CardTitle className="text-xl">Sign in to ClubCore</CardTitle>
-          <CardDescription>Use the email and password your club admin set up for you.</CardDescription>
+          <CardDescription>Use the email and password your club secretary set up for you.</CardDescription>
         </CardHeader>
         <CardContent>
           <LoginForm />

@@ -3,19 +3,52 @@ import type { Membership } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 
 /**
- * ADMIN sees every credential at the club. COACH sees only their own — this
- * is `credential:view:own` rather than `credential:view:club`, and it's
- * enforced here by scoping to `userId: active.userId` rather than by
- * filtering in the page. TREASURER and GUARDIAN get an empty list; the
- * /safeguarding route itself is also hard-blocked for them at the guard.
+ * Credential visibility has three levels, mirroring the safeguarding page:
+ *
+ *  - WELFARE_OFFICER — full safeguarding visibility across every team,
+ *    including the attached document.
+ *  - SECRETARY — "sees whether a coach's DBS is in date", "does not see the
+ *    DBS document itself". Enforced by never selecting documentId/document
+ *    for them, not by hiding it in the page.
+ *  - COACH — their own record only (`credential:view:own`), scoped by
+ *    userId in the query.
+ *
+ * TREASURER and GUARDIAN get nothing here, and /safeguarding is hard-blocked
+ * for them at the route guard as well.
  */
-export async function listCredentialsForMembership(active: Membership) {
-  const userWith = { select: { id: true, name: true } } as const;
 
-  if (active.role === "ADMIN") {
+const USER_SELECT = { select: { id: true, name: true } } as const;
+
+/** Everything except the document — what a secretary is allowed to see. */
+const STATUS_FIELDS = {
+  id: true,
+  type: true,
+  referenceNumber: true,
+  issueDate: true,
+  expiryDate: true,
+  userId: true,
+  clubId: true,
+  user: USER_SELECT,
+} as const;
+
+export function canSeeCredentialDocument(active: Membership) {
+  return active.role === "WELFARE_OFFICER";
+}
+
+export async function listCredentialsForMembership(active: Membership) {
+  if (active.role === "WELFARE_OFFICER") {
     return prisma.credential.findMany({
       where: { clubId: active.clubId },
-      include: { user: userWith },
+      select: { ...STATUS_FIELDS, documentId: true },
+      orderBy: { expiryDate: "asc" },
+    });
+  }
+
+  if (active.role === "SECRETARY") {
+    // Status only — the document is deliberately not selected.
+    return prisma.credential.findMany({
+      where: { clubId: active.clubId },
+      select: STATUS_FIELDS,
       orderBy: { expiryDate: "asc" },
     });
   }
@@ -23,7 +56,7 @@ export async function listCredentialsForMembership(active: Membership) {
   if (active.role === "COACH") {
     return prisma.credential.findMany({
       where: { clubId: active.clubId, userId: active.userId },
-      include: { user: userWith },
+      select: STATUS_FIELDS,
       orderBy: { expiryDate: "asc" },
     });
   }
@@ -33,16 +66,28 @@ export async function listCredentialsForMembership(active: Membership) {
 
 export async function getCredentialForMembership(active: Membership, credentialId: string) {
   const scopeWhere =
-    active.role === "ADMIN"
+    active.role === "WELFARE_OFFICER" || active.role === "SECRETARY"
       ? { id: credentialId, clubId: active.clubId }
       : active.role === "COACH"
         ? { id: credentialId, clubId: active.clubId, userId: active.userId }
         : { id: "__none__" };
 
-  return prisma.credential.findFirst({
+  // Only the welfare officer's query ever joins the document row. Both
+  // branches return the same shape (document: … | null) so callers don't
+  // have to narrow a union — the difference is what the DB was asked for,
+  // which is the part that actually matters.
+  if (canSeeCredentialDocument(active)) {
+    return prisma.credential.findFirst({
+      where: scopeWhere,
+      select: { ...STATUS_FIELDS, document: true },
+    });
+  }
+
+  const credential = await prisma.credential.findFirst({
     where: scopeWhere,
-    include: { user: { select: { id: true, name: true } }, document: true },
+    select: STATUS_FIELDS,
   });
+  return credential ? { ...credential, document: null } : null;
 }
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;

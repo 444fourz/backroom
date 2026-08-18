@@ -4,14 +4,19 @@ import type { Membership } from "@prisma/client";
 
 import { requireCapability } from "@/lib/permissions/guard";
 import { roleHasCapability } from "@/lib/permissions/policies";
-import { getEventForMembership, getAttendanceRosterForEvent } from "@/lib/data/events";
+import {
+  getEventForMembership,
+  getAttendanceRosterForEvent,
+  getMatchStatRosterForEvent,
+} from "@/lib/data/events";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AvailabilityStatusBadge, AttendanceStatusBadge } from "@/components/shared/status-badge";
 import { ActionToast } from "@/components/shared/action-toast";
 import { cn } from "@/lib/utils";
 
-import { recordAttendanceAction } from "./actions";
+import { recordAttendanceAction, recordMatchStatAction } from "./actions";
 
 export default async function FixtureDetailPage({
   params,
@@ -25,6 +30,7 @@ export default async function FixtureDetailPage({
   if (!event) notFound();
 
   const canRecordAttendance = roleHasCapability(active.role, "attendance:record");
+  const canRecordMatchStats = event.type === "MATCH" && roleHasCapability(active.role, "matchstat:record");
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,6 +107,31 @@ export default async function FixtureDetailPage({
             </CardContent>
           </Card>
         ) : null}
+
+        {canRecordMatchStats ? (
+          <MatchStatsCard active={active} eventId={event.id} />
+        ) : event.matchStats.length > 0 ? (
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base">Match stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="flex flex-col divide-y text-sm">
+                {event.matchStats.map((stat) => (
+                  <li key={stat.id} className="flex items-center justify-between py-2">
+                    <span>
+                      {stat.player.firstName} {stat.player.lastName}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {stat.goals} {stat.goals === 1 ? "goal" : "goals"} · {stat.assists}{" "}
+                      {stat.assists === 1 ? "assist" : "assists"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );
@@ -152,6 +183,72 @@ async function AttendanceCard({
                 ))}
               </div>
             </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+async function MatchStatsCard({
+  active,
+  eventId,
+}: {
+  active: Membership;
+  eventId: string;
+}) {
+  const roster = await getMatchStatRosterForEvent(active, eventId);
+  if (!roster) return null;
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-base">Match stats</CardTitle>
+        <CardDescription>Goals and assists per player — save each row separately.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {roster.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No active players on this team yet.</p>
+        ) : (
+          roster.map(({ player, stat }) => (
+            <form
+              key={player.id}
+              action={recordMatchStatAction}
+              className="flex flex-col gap-2 border-b pb-3 last:border-b-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <input type="hidden" name="eventId" value={eventId} />
+              <input type="hidden" name="playerId" value={player.id} />
+              <p className="font-medium">
+                {player.firstName} {player.lastName}
+              </p>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  Goals
+                  <Input
+                    type="number"
+                    name="goals"
+                    min={0}
+                    max={99}
+                    defaultValue={stat?.goals ?? 0}
+                    className="w-16"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  Assists
+                  <Input
+                    type="number"
+                    name="assists"
+                    min={0}
+                    max={99}
+                    defaultValue={stat?.assists ?? 0}
+                    className="w-16"
+                  />
+                </label>
+                <Button type="submit" size="sm" variant="outline">
+                  Save
+                </Button>
+              </div>
+            </form>
           ))
         )}
       </CardContent>

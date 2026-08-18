@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { requireAnyCapability } from "@/lib/permissions/guard";
-import { getCredentialForMembership } from "@/lib/data/credentials";
+import { getCredentialForMembership, canSeeCredentialDocument } from "@/lib/data/credentials";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CredentialStatusBadge } from "@/components/shared/status-badge";
 
@@ -11,10 +11,18 @@ export default async function CredentialDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { active } = await requireAnyCapability(["credential:view:club", "credential:view:own"]);
+  const { active } = await requireAnyCapability([
+    "credential:view:club",
+    "credential:view:own",
+    "credential:status:view",
+  ]);
 
   const credential = await getCredentialForMembership(active, id);
   if (!credential) notFound();
+
+  // The document is only ever fetched for a welfare officer — for anyone
+  // else the data layer never asked the DB for it, so it's null here.
+  const document = credential.document;
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
@@ -37,6 +45,15 @@ export default async function CredentialDetailPage({
             <span className="text-muted-foreground">Status</span>
             <CredentialStatusBadge expiryDate={credential.expiryDate} />
           </div>
+          {document ? (
+            <Row label="Certificate" value={document.title} />
+          ) : canSeeCredentialDocument(active) ? (
+            <p className="pt-2 text-xs text-muted-foreground">No certificate attached to this record.</p>
+          ) : (
+            <p className="pt-2 text-xs text-muted-foreground">
+              The certificate itself is visible to the welfare officer only.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -14,7 +14,7 @@ function fail(message: string): never {
 export async function createEventAction(formData: FormData): Promise<void> {
   const { user, active } = await requireCapability("event:create");
 
-  if (!active.teamId && active.role !== "ADMIN") {
+  if (!active.teamId && active.role !== "SECRETARY") {
     fail("You need to be scoped to a team to create a fixture.");
   }
 
@@ -33,9 +33,9 @@ export async function createEventAction(formData: FormData): Promise<void> {
     fail(parsed.error.issues[0]?.message ?? "Check the fixture details.");
   }
 
-  // Admin isn't locked to one team, so a team must be posted explicitly for
-  // them; a coach is always scoped to their own active membership's team.
-  const teamId = active.role === "ADMIN" ? String(formData.get("teamId") ?? "") : active.teamId!;
+  // A secretary isn't locked to one team, so a team must be posted explicitly
+  // for them; a coach is always scoped to their own active membership's team.
+  const teamId = active.role === "SECRETARY" ? String(formData.get("teamId") ?? "") : active.teamId!;
   if (!teamId) {
     fail("Choose a team for this fixture.");
   }

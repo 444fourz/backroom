@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarDays, Plus } from "lucide-react";
 
 import { requireCapability } from "@/lib/permissions/guard";
+import { roleHasCapability } from "@/lib/permissions/policies";
 import { listEventsForMembership } from "@/lib/data/events";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import {
 export default async function FixturesPage() {
   const { active } = await requireCapability("event:view");
   const events = await listEventsForMembership(active);
-  const canCreate = active.role === "ADMIN" || active.role === "COACH";
+  const canCreate = roleHasCapability(active.role, "event:create");
 
   return (
     <div className="flex flex-col gap-4">
