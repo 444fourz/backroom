@@ -21,8 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { waiveInvoiceAction } from "../actions";
-import { WaiveInvoiceDialog } from "./arrears-controls";
+import { waiveInvoiceAction, createPaymentPlanAction } from "../actions";
+import { WaiveInvoiceDialog, PaymentPlanDialog } from "./arrears-controls";
 
 function formatPence(pence: number) {
   return (pence / 100).toLocaleString("en-GB", { style: "currency", currency: "GBP" });
@@ -121,9 +121,12 @@ export default async function ArrearsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" disabled title="Installment plans aren't built yet">
-                      Payment plan
-                    </Button>
+                    <PaymentPlanDialog
+                      action={createPaymentPlanAction}
+                      invoiceId={invoice.id}
+                      playerName={`${invoice.player.firstName} ${invoice.player.lastName}`}
+                      outstandingLabel={formatPence(invoice.outstandingPence)}
+                    />
                     <WaiveInvoiceDialog
                       action={waiveInvoiceAction}
                       invoiceId={invoice.id}

@@ -64,7 +64,7 @@ export async function listArrearsForMembership(active: Membership) {
   });
 }
 
-function outstandingPence(invoice: {
+export function outstandingPence(invoice: {
   amountPence: number;
   discountPence: number | null;
   payments: { amountPence: number }[];

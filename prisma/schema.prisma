@@ -384,30 +384,38 @@ enum InvoiceStatus {
   OVERDUE
   WAIVED
   PARTIAL
+  // The original invoice once it's been split into a payment plan — its
+  // balance now lives on the installment invoices below, so it should
+  // stop appearing in arrears itself.
+  SUPERSEDED
 }
 
 model Invoice {
-  id            String        @id @default(cuid())
-  clubId        String
-  playerId      String
-  seasonId      String
-  type          InvoiceType
-  description   String
-  amountPence   Int
-  dueDate       DateTime
-  status        InvoiceStatus @default(PENDING)
-  discountPence Int?
-  waivedReason  String?
-  createdAt     DateTime      @default(now())
+  id              String        @id @default(cuid())
+  clubId          String
+  playerId        String
+  seasonId        String
+  type            InvoiceType
+  description     String
+  amountPence     Int
+  dueDate         DateTime
+  status          InvoiceStatus @default(PENDING)
+  discountPence   Int?
+  waivedReason    String?
+  parentInvoiceId String?
+  createdAt       DateTime      @default(now())
 
-  club     Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  player   Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  season   Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  payments Payment[]
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  player        Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  season        Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  payments      Payment[]
+  parentInvoice Invoice?  @relation("InvoiceInstallments", fields: [parentInvoiceId], references: [id], onDelete: SetNull)
+  installments  Invoice[] @relation("InvoiceInstallments")
 
   @@index([clubId])
   @@index([playerId])
   @@index([status])
+  @@index([parentInvoiceId])
 }
 
 enum PaymentMethod {
