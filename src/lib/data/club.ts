@@ -105,3 +105,10 @@ export async function listSeasonsForClub(active: Membership) {
     orderBy: { startDate: "desc" },
   });
 }
+
+export async function listSponsorsForClub(active: Membership) {
+  return prisma.sponsor.findMany({
+    where: { clubId: active.clubId },
+    orderBy: { createdAt: "asc" },
+  });
+}

@@ -104,6 +104,25 @@ model Club {
   credentials Credential[]
   documents   Document[]
   invites     Invite[]
+  sponsors    Sponsor[]
+}
+
+/**
+ * Deliberately minimal: name and an optional link, shown on the club
+ * overview page. No logo upload (file uploads are out of scope, same as
+ * Document) and no tiers/placement — just enough to say "these clubs help
+ * fund us," which is what a volunteer-run club actually needs day one.
+ */
+model Sponsor {
+  id         String   @id @default(cuid())
+  clubId     String
+  name       String
+  websiteUrl String?
+  createdAt  DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
 }
 
 model Season {

@@ -2,17 +2,22 @@ import Link from "next/link";
 import { Building2, FileText, Users, UsersRound } from "lucide-react";
 
 import { requireCapability } from "@/lib/permissions/guard";
-import { getClubOverview, listTeamsWithDbsStatus } from "@/lib/data/club";
+import { getClubOverview, listTeamsWithDbsStatus, listSponsorsForClub } from "@/lib/data/club";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/shared/stat-card";
 
-import { updateArrearsSignalAction } from "./actions";
+import { updateArrearsSignalAction, addSponsorAction, removeSponsorAction } from "./actions";
+import { AddSponsorDialog, RemoveSponsorButton } from "./sponsor-controls";
 
 export default async function ClubOverviewPage() {
   const { active } = await requireCapability("club:manage");
-  const [club, teams] = await Promise.all([getClubOverview(active), listTeamsWithDbsStatus(active)]);
+  const [club, teams, sponsors] = await Promise.all([
+    getClubOverview(active),
+    listTeamsWithDbsStatus(active),
+    listSponsorsForClub(active),
+  ]);
   if (!club) return null;
 
   return (
@@ -91,6 +96,38 @@ export default async function ClubOverviewPage() {
               {club.showArrearsToWelfare ? "Turn off" : "Turn on"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Sponsors</CardTitle>
+          <AddSponsorDialog action={addSponsorAction} />
+        </CardHeader>
+        <CardContent>
+          {sponsors.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No sponsors added yet.</p>
+          ) : (
+            <ul className="flex flex-col divide-y text-sm">
+              {sponsors.map((sponsor) => (
+                <li key={sponsor.id} className="flex items-center justify-between py-2">
+                  {sponsor.websiteUrl ? (
+                    <a
+                      href={sponsor.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:underline"
+                    >
+                      {sponsor.name}
+                    </a>
+                  ) : (
+                    <span className="font-medium">{sponsor.name}</span>
+                  )}
+                  <RemoveSponsorButton action={removeSponsorAction} sponsorId={sponsor.id} />
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 
