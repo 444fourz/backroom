@@ -90,6 +90,11 @@ model Club {
   sport     Sport    @default(FOOTBALL)
   createdAt DateTime @default(now())
 
+  // Off by default — the safeguarding page promises the welfare officer sees
+  // no financial detail "unless the club turns that on." When true, the
+  // welfare officer sees a family is in arrears (yes/no) and never a figure.
+  showArrearsToWelfare Boolean @default(false)
+
   seasons     Season[]
   teams       Team[]
   memberships Membership[]

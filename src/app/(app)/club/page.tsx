@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/shared/stat-card";
 
+import { updateArrearsSignalAction } from "./actions";
+
 export default async function ClubOverviewPage() {
   const { active } = await requireCapability("club:manage");
   const club = await getClubOverview(active);
@@ -44,6 +46,29 @@ export default async function ClubOverviewPage() {
               </li>
             ))}
           </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Welfare officer visibility</CardTitle>
+          <CardDescription>
+            Hardship is sometimes something a welfare officer needs to know about. Turning this on
+            lets them see that a family is in arrears — never an amount, never a due date.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {club.showArrearsToWelfare
+              ? "On — the welfare officer sees which families are in arrears."
+              : "Off — the welfare officer sees no financial detail at all."}
+          </p>
+          <form action={updateArrearsSignalAction}>
+            <input type="hidden" name="enabled" value={String(!club.showArrearsToWelfare)} />
+            <Button type="submit" variant="outline">
+              {club.showArrearsToWelfare ? "Turn off" : "Turn on"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 

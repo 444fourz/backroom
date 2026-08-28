@@ -13,11 +13,14 @@ import { StatCard } from "@/components/shared/stat-card";
 export default async function DashboardPage() {
   const { user, active } = await requireActiveMembership();
 
+  const canSeeCredentialStatus =
+    roleHasCapability(active.role, "credential:view:own") ||
+    roleHasCapability(active.role, "credential:view:club") ||
+    roleHasCapability(active.role, "credential:status:view");
+
   const [events, credentials] = await Promise.all([
     listEventsForMembership(active),
-    roleHasCapability(active.role, "credential:view:own") || roleHasCapability(active.role, "credential:view:club")
-      ? listCredentialsForMembership(active)
-      : Promise.resolve([]),
+    canSeeCredentialStatus ? listCredentialsForMembership(active) : Promise.resolve([]),
   ]);
 
   const upcomingEvents = events.filter((event) => event.startTime > new Date()).slice(0, 5);

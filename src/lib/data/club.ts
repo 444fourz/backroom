@@ -41,9 +41,17 @@ export async function listMembersForClub(active: Membership) {
   });
 }
 
+/**
+ * Scoped by each document's own `visibility` list, not just the caller's
+ * capability — a secretary reaches this via document:manage, but that alone
+ * would show every document including a coach's DBS certificate. The
+ * safeguarding page promises the secretary sees a DBS is in date, never the
+ * certificate itself; the certificate's visibility is WELFARE_OFFICER-only,
+ * so it's filtered out here rather than relying on the route guard alone.
+ */
 export async function listDocumentsForClub(active: Membership) {
   return prisma.document.findMany({
-    where: { clubId: active.clubId },
+    where: { clubId: active.clubId, visibility: { has: active.role } },
     include: { uploadedBy: { select: { id: true, name: true } } },
     orderBy: { createdAt: "desc" },
   });

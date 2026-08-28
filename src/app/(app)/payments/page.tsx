@@ -51,6 +51,7 @@ export default async function PaymentsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Player</TableHead>
+                  {isTreasurerView ? <TableHead>Family contact</TableHead> : null}
                   <TableHead>Description</TableHead>
                   <TableHead>Due</TableHead>
                   <TableHead>Amount</TableHead>
@@ -58,25 +59,43 @@ export default async function PaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>
-                      {invoice.player.firstName} {invoice.player.lastName}
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/payments/invoices/${invoice.id}`} className="hover:underline">
-                        {invoice.description}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {invoice.dueDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                    </TableCell>
-                    <TableCell>{formatPence(invoice.amountPence)}</TableCell>
-                    <TableCell>
-                      <InvoiceStatusBadge status={invoice.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {invoices.map((invoice) => {
+                  const contact = invoice.player.guardians[0]?.guardian;
+                  return (
+                    <TableRow key={invoice.id}>
+                      <TableCell>
+                        {invoice.player.firstName} {invoice.player.lastName}
+                      </TableCell>
+                      {isTreasurerView ? (
+                        <TableCell className="text-muted-foreground">
+                          {contact ? (
+                            <>
+                              {contact.name}
+                              <br />
+                              <a href={`mailto:${contact.email}`} className="hover:underline">
+                                {contact.email}
+                              </a>
+                            </>
+                          ) : (
+                            "No guardian linked"
+                          )}
+                        </TableCell>
+                      ) : null}
+                      <TableCell>
+                        <Link href={`/payments/invoices/${invoice.id}`} className="hover:underline">
+                          {invoice.description}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {invoice.dueDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                      </TableCell>
+                      <TableCell>{formatPence(invoice.amountPence)}</TableCell>
+                      <TableCell>
+                        <InvoiceStatusBadge status={invoice.status} />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

@@ -6,6 +6,7 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { roleHasCapability } from "@/lib/permissions/policies";
 import { listPlayersForMembership } from "@/lib/data/players";
 import { listTeamsForClub } from "@/lib/data/club";
+import { getArrearsSignalForWelfare } from "@/lib/data/payments";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ export default async function PlayersPage({
   const canManage = roleHasCapability(active.role, "club:manage");
   const teams = canManage ? await listTeamsForClub(active) : [];
   const teamOptions = teams.map((team) => ({ id: team.id, name: team.name }));
+  const arrearsSignal = await getArrearsSignalForWelfare(active);
   const { error } = await searchParams;
 
   return (
@@ -67,6 +69,7 @@ export default async function PlayersPage({
                   <TableHead>Name</TableHead>
                   <TableHead>Date of birth</TableHead>
                   <TableHead>Status</TableHead>
+                  {arrearsSignal ? <TableHead>Arrears</TableHead> : null}
                   {canManage ? (
                     <TableHead className="w-10 text-right">
                       <span className="sr-only">Manage</span>
@@ -88,6 +91,15 @@ export default async function PlayersPage({
                         {player.status.toLowerCase()}
                       </Badge>
                     </TableCell>
+                    {arrearsSignal ? (
+                      <TableCell>
+                        {arrearsSignal.has(player.id) ? (
+                          <Badge variant="destructive">In arrears</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    ) : null}
                     {canManage ? (
                       <TableCell className="text-right">
                         <RowActions

@@ -20,6 +20,8 @@ export default async function InvoiceDetailPage({
   const invoice = await getInvoiceForMembership(active, id);
   if (!invoice) notFound();
 
+  const contact = invoice.player.guardians[0]?.guardian;
+
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
       <div>
@@ -28,6 +30,26 @@ export default async function InvoiceDetailPage({
           {invoice.player.firstName} {invoice.player.lastName}
         </p>
       </div>
+
+      {active.role === "TREASURER" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Family contact</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {contact ? (
+              <>
+                <p className="font-medium">{contact.name}</p>
+                <a href={`mailto:${contact.email}`} className="text-muted-foreground hover:underline">
+                  {contact.email}
+                </a>
+              </>
+            ) : (
+              <p className="text-muted-foreground">No guardian linked to this player yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

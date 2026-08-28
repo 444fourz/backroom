@@ -18,10 +18,13 @@ async function main() {
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
 
   // --- Club, season, teams (natural-key upserts — safe to re-run) ---
+  // showArrearsToWelfare is on here so the demo club shows the feature
+  // working end-to-end; a real club starts with it off until the secretary
+  // turns it on from /club.
   const club = await prisma.club.upsert({
     where: { slug: CLUB_SLUG },
-    update: {},
-    create: { name: "Aston Rovers FC", slug: CLUB_SLUG, sport: "FOOTBALL" },
+    update: { showArrearsToWelfare: true },
+    create: { name: "Aston Rovers FC", slug: CLUB_SLUG, sport: "FOOTBALL", showArrearsToWelfare: true },
   });
 
   const season = await prisma.season.upsert({

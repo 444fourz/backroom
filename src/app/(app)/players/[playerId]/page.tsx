@@ -4,6 +4,7 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { roleHasCapability } from "@/lib/permissions/policies";
 import { getPlayerForMembership, listLinkableGuardians } from "@/lib/data/players";
 import { getPlayerStatTotals } from "@/lib/data/stats";
+import { getArrearsSignalForWelfare } from "@/lib/data/payments";
 import {
   Card,
   CardContent,
@@ -40,6 +41,7 @@ export default async function PlayerDetailPage({
   const canManage = roleHasCapability(active.role, "club:manage");
   const linkableGuardians = canManage ? await listLinkableGuardians(active, player.id) : [];
   const stats = await getPlayerStatTotals(active, player.id);
+  const arrearsSignal = await getArrearsSignalForWelfare(active);
   const { error } = await searchParams;
 
   return (
@@ -75,6 +77,16 @@ export default async function PlayerDetailPage({
                   {player.status.toLowerCase()}
                 </Badge>
               </div>
+              {arrearsSignal ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Arrears</span>
+                  {arrearsSignal.has(player.id) ? (
+                    <Badge variant="destructive">In arrears</Badge>
+                  ) : (
+                    <span>No arrears on record</span>
+                  )}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>
