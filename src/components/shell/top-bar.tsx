@@ -2,6 +2,7 @@ import type { MembershipRole } from "@prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "@/components/shell/user-menu";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { roleLabel } from "@/lib/permissions/policies";
 
 export function TopBar({
@@ -28,7 +29,10 @@ export function TopBar({
           {roleLabel(role)}
         </Badge>
       </div>
-      <UserMenu name={userName} email={userEmail} showSwitchClub={showSwitchClub} />
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <UserMenu name={userName} email={userEmail} showSwitchClub={showSwitchClub} />
+      </div>
     </header>
   );
 }
