@@ -20,6 +20,33 @@ export async function requireCurrentUser() {
 }
 
 /**
+ * Auto-accepts any pending invite addressed to this user's email. This is
+ * what closes the loop for someone who already has a ClubCore account and
+ * gets invited to a second club (or a second role) — they never see an
+ * "accept" step, the membership is just there next time they're signed in.
+ * A brand-new person instead creates their account via the
+ * /register-invite/[token] form, which marks the invite accepted directly.
+ */
+async function attachPendingInvites(userId: string, email: string) {
+  const pending = await prisma.invite.findMany({
+    where: { email: email.toLowerCase().trim(), acceptedAt: null, expiresAt: { gt: new Date() } },
+  });
+  if (pending.length === 0) return;
+
+  for (const invite of pending) {
+    const alreadyMember = await prisma.membership.findFirst({
+      where: { userId, clubId: invite.clubId, role: invite.role, teamId: invite.teamId },
+    });
+    if (!alreadyMember) {
+      await prisma.membership.create({
+        data: { userId, clubId: invite.clubId, teamId: invite.teamId, role: invite.role, status: "ACTIVE" },
+      });
+    }
+    await prisma.invite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } });
+  }
+}
+
+/**
  * Resolves which club/team the current request is acting within. A user can
  * hold memberships at multiple clubs (and multiple roles/teams within one
  * club), so identity alone never implies a scope — every capability check
@@ -28,6 +55,7 @@ export async function requireCurrentUser() {
  */
 export async function getActiveMembership() {
   const user = await requireCurrentUser();
+  await attachPendingInvites(user.id, user.email);
 
   const memberships = await prisma.membership.findMany({
     where: { userId: user.id, status: "ACTIVE" },
