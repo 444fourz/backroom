@@ -1,6 +1,7 @@
 import type { Membership, MembershipRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { roleLabel } from "./policies";
 
 /**
  * Guardrails on member/role administration.
@@ -102,9 +103,16 @@ export async function checkRemoveMembership(
 }
 
 /**
- * Can `active` invite `email` as `role`? Closes the loophole where a
- * secretary invites their own address into an elevated role and accepts it
- * — which would sidestep the self-role-change block above.
+ * Can `active` invite `email` as `role`?
+ *
+ * Self-inviting into a role is allowed only when nobody currently holds it
+ * — that's the one-person-club case: a solo secretary can add Treasurer to
+ * their own account if the club has no dedicated treasurer yet, so they
+ * aren't blocked from doing the job themselves. The moment someone else
+ * actually holds a role, self-inviting into it is blocked — a secretary
+ * can't sidestep an existing treasurer or welfare officer's exclusive
+ * access to something they're not meant to see just by also granting it
+ * to themselves. Clubs with real committees still get the full separation.
  */
 export async function checkInvite(
   active: Membership,
@@ -117,11 +125,18 @@ export async function checkInvite(
   }
 
   const normalised = email.toLowerCase().trim();
-  if (normalised === actorEmail.toLowerCase().trim() && role !== active.role) {
-    return {
-      ok: false,
-      reason: "You can't invite yourself into a different role.",
-    };
+  const isSelfInvite = normalised === actorEmail.toLowerCase().trim();
+
+  if (isSelfInvite && role !== active.role) {
+    const holder = await prisma.membership.findFirst({
+      where: { clubId: active.clubId, role, status: "ACTIVE" },
+    });
+    if (holder) {
+      return {
+        ok: false,
+        reason: `Someone already holds the ${roleLabel(role).toLowerCase()} role at this club — ask them, or remove their access first.`,
+      };
+    }
   }
 
   const existing = await prisma.membership.findFirst({
