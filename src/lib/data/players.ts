@@ -95,6 +95,15 @@ export async function getPlayerForMembership(active: Membership, playerId: strin
  * GUARDIAN role at this club, so linking can never reach an arbitrary
  * account.
  */
+/**
+ * A headcount only — no names, no medical/consent data — so it's safe for
+ * any internal role to show on the dashboard, including the treasurer, who
+ * otherwise has no player:view:* capability at all.
+ */
+export async function countActivePlayersForClub(active: Membership) {
+  return prisma.player.count({ where: { clubId: active.clubId, status: "ACTIVE" } });
+}
+
 export async function listLinkableGuardians(active: Membership, playerId: string) {
   if (active.role !== "SECRETARY") return [];
 

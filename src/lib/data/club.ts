@@ -23,6 +23,48 @@ export async function listTeamsForClub(active: Membership) {
   });
 }
 
+/**
+ * Teams with a "DBS due" flag — whether any coach on that team has a
+ * credential expiring within 30 days or already expired. Deliberately
+ * doesn't touch payments: this page is club:manage (SECRETARY-only), and
+ * the secretary sees no financial detail, so there's no "unpaid" chip here
+ * — only what credential:status:view already lets them see.
+ */
+export async function listTeamsWithDbsStatus(active: Membership) {
+  const [teams, coachMemberships] = await Promise.all([
+    listTeamsForClub(active),
+    prisma.membership.findMany({
+      where: { clubId: active.clubId, role: "COACH", teamId: { not: null } },
+      select: { teamId: true, userId: true },
+    }),
+  ]);
+
+  const coachUserIdsByTeam = new Map<string, string[]>();
+  for (const membership of coachMemberships) {
+    if (!membership.teamId) continue;
+    const list = coachUserIdsByTeam.get(membership.teamId) ?? [];
+    list.push(membership.userId);
+    coachUserIdsByTeam.set(membership.teamId, list);
+  }
+
+  const allCoachUserIds = coachMemberships.map((membership) => membership.userId);
+  const credentials = await prisma.credential.findMany({
+    where: { clubId: active.clubId, userId: { in: allCoachUserIds } },
+    select: { userId: true, expiryDate: true },
+  });
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  const dueSoonUserIds = new Set(
+    credentials
+      .filter((credential) => credential.expiryDate.getTime() - Date.now() < THIRTY_DAYS_MS)
+      .map((credential) => credential.userId),
+  );
+
+  return teams.map((team) => ({
+    ...team,
+    dbsDue: (coachUserIdsByTeam.get(team.id) ?? []).some((userId) => dueSoonUserIds.has(userId)),
+  }));
+}
+
 export async function getTeamForClub(active: Membership, teamId: string) {
   return prisma.team.findFirst({
     where: { id: teamId, clubId: active.clubId },

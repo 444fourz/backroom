@@ -2,16 +2,17 @@ import Link from "next/link";
 import { Building2, FileText, Users, UsersRound } from "lucide-react";
 
 import { requireCapability } from "@/lib/permissions/guard";
-import { getClubOverview } from "@/lib/data/club";
+import { getClubOverview, listTeamsWithDbsStatus } from "@/lib/data/club";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/shared/stat-card";
 
 import { updateArrearsSignalAction } from "./actions";
 
 export default async function ClubOverviewPage() {
   const { active } = await requireCapability("club:manage");
-  const club = await getClubOverview(active);
+  const [club, teams] = await Promise.all([getClubOverview(active), listTeamsWithDbsStatus(active)]);
   if (!club) return null;
 
   return (
@@ -27,6 +28,27 @@ export default async function ClubOverviewPage() {
         <StatCard href="/players" label="Players" value={club._count.players} icon={Users} />
         <StatCard href="/club/documents" label="Documents" value={club._count.documents} icon={FileText} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Teams</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col divide-y p-0">
+          {teams.map((team) => (
+            <Link
+              key={team.id}
+              href={`/club/teams/${team.id}`}
+              className="flex items-center justify-between px-4 py-3 text-sm transition-colors hover:bg-accent"
+            >
+              <div>
+                <span className="font-medium">{team.name}</span>
+                <span className="ml-2 text-muted-foreground">{team._count.players} players</span>
+              </div>
+              {team.dbsDue ? <Badge variant="destructive">DBS due</Badge> : null}
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

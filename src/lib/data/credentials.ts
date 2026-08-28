@@ -17,7 +17,7 @@ import { prisma } from "@/lib/db/prisma";
  * for them at the route guard as well.
  */
 
-const USER_SELECT = { select: { id: true, name: true } } as const;
+const USER_SELECT = { select: { id: true, name: true, email: true } } as const;
 
 /** Everything except the document — what a secretary is allowed to see. */
 const STATUS_FIELDS = {
