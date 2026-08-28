@@ -27,6 +27,7 @@ export type Capability =
   | "payment:manage"
   | "registration:view:all"
   | "registration:view:own"
+  | "registration:manage:own"
   | "player:view:team"
   | "player:view:own"
   | "medical:view"
@@ -116,6 +117,7 @@ export const ROLE_CAPABILITIES: Record<MembershipRole, Capability[]> = {
     "availability:respond",
     "payment:view:own",
     "registration:view:own",
+    "registration:manage:own",
     "player:view:own",
     "document:view",
     // Deliberately excluded: attendance:record, medical:view (their own
