@@ -1,6 +1,7 @@
 import type { Membership } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { writeAuditLog } from "@/lib/audit/log";
 
 /**
  * Credential visibility has three levels, mirroring the safeguarding page:
@@ -77,10 +78,23 @@ export async function getCredentialForMembership(active: Membership, credentialI
   // have to narrow a union — the difference is what the DB was asked for,
   // which is the part that actually matters.
   if (canSeeCredentialDocument(active)) {
-    return prisma.credential.findFirst({
+    const credential = await prisma.credential.findFirst({
       where: scopeWhere,
       select: { ...STATUS_FIELDS, document: true },
     });
+
+    // The other "every view" the safeguarding page promises — opening the
+    // actual DBS/certificate document, not just its expiry status.
+    if (credential?.document) {
+      await writeAuditLog({
+        actorUserId: active.userId,
+        action: "credential.document.viewed",
+        entityType: "Document",
+        entityId: credential.document.id,
+      });
+    }
+
+    return credential;
   }
 
   const credential = await prisma.credential.findFirst({

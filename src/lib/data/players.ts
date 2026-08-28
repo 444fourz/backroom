@@ -2,6 +2,7 @@ import type { Membership } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 import { roleHasCapability } from "@/lib/permissions/policies";
+import { writeAuditLog } from "@/lib/audit/log";
 
 /**
  * Every function below takes the caller's *active* Membership (never a bare
@@ -79,7 +80,7 @@ export async function getPlayerForMembership(active: Membership, playerId: strin
   const canSeeMedical =
     active.role === "GUARDIAN" || roleHasCapability(active.role, "medical:view");
 
-  return prisma.player.findFirst({
+  const player = await prisma.player.findFirst({
     where: playerScopeWhere(active, playerId),
     include: {
       medical: canSeeMedical,
@@ -87,14 +88,23 @@ export async function getPlayerForMembership(active: Membership, playerId: strin
       team: true,
     },
   });
+
+  // Safeguarding page promise: "every view of a medical or safeguarding
+  // record" — logged for staff (coach/welfare officer) actually receiving
+  // medical data. A guardian's routine view of their own child isn't
+  // logged here, or this would flood the log with low-value entries.
+  if (player?.medical && active.role !== "GUARDIAN") {
+    await writeAuditLog({
+      actorUserId: active.userId,
+      action: "medical.viewed",
+      entityType: "PlayerMedicalInfo",
+      entityId: player.id,
+    });
+  }
+
+  return player;
 }
 
-/**
- * Club guardians not yet linked to this player — the candidate list when a
- * secretary links someone new. Restricted to people who already hold a
- * GUARDIAN role at this club, so linking can never reach an arbitrary
- * account.
- */
 /**
  * A headcount only — no names, no medical/consent data — so it's safe for
  * any internal role to show on the dashboard, including the treasurer, who
@@ -104,6 +114,12 @@ export async function countActivePlayersForClub(active: Membership) {
   return prisma.player.count({ where: { clubId: active.clubId, status: "ACTIVE" } });
 }
 
+/**
+ * Club guardians not yet linked to this player — the candidate list when a
+ * secretary links someone new. Restricted to people who already hold a
+ * GUARDIAN role at this club, so linking can never reach an arbitrary
+ * account.
+ */
 export async function listLinkableGuardians(active: Membership, playerId: string) {
   if (active.role !== "SECRETARY") return [];
 

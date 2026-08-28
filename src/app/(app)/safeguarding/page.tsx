@@ -167,8 +167,8 @@ export default async function SafeguardingPage() {
               <p className="font-medium">Access log</p>
               <p className="text-sm text-muted-foreground">Every view of a medical or safeguarding record.</p>
             </div>
-            <Button variant="outline" disabled title="Not built yet — audit entries are recorded but not browsable">
-              View log
+            <Button asChild variant="outline">
+              <Link href="/safeguarding/access-log">View log</Link>
             </Button>
           </CardContent>
         </Card>
