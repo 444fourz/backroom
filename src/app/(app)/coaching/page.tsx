@@ -15,7 +15,7 @@ export default async function CoachingPage() {
       <EmptyState
         icon={Dumbbell}
         title="Coaching tools are coming"
-        description="Session plans and match reports will live here. The AI will draft, the coach decides — nothing here acts on its own."
+        description="Session plans and match reports will live here. The AI will draft, the coach decides: nothing here acts on its own."
       />
     </div>
   );

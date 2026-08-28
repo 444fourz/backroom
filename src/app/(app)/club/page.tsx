@@ -81,14 +81,14 @@ export default async function ClubOverviewPage() {
           <CardTitle className="text-base">Welfare officer visibility</CardTitle>
           <CardDescription>
             Hardship is sometimes something a welfare officer needs to know about. Turning this on
-            lets them see that a family is in arrears — never an amount, never a due date.
+            lets them see that a family is in arrears, never an amount, never a due date.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             {club.showArrearsToWelfare
-              ? "On — the welfare officer sees which families are in arrears."
-              : "Off — the welfare officer sees no financial detail at all."}
+              ? "On: the welfare officer sees which families are in arrears."
+              : "Off: the welfare officer sees no financial detail at all."}
           </p>
           <form action={updateArrearsSignalAction}>
             <input type="hidden" name="enabled" value={String(!club.showArrearsToWelfare)} />

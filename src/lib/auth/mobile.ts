@@ -10,7 +10,7 @@ import { prisma } from "@/lib/db/prisma";
  * leaked mobile token can't be replayed as a web session cookie, or vice
  * versa, even though both are derived from the same underlying secret.
  */
-const SALT = "clubcore-mobile-token";
+const SALT = "backroom-mobile-token";
 // No refresh-token flow yet — a single 30-day token, no server-side
 // revocation before it expires. Fine for a first cut with no real users;
 // worth revisiting (short-lived access token + refresh token) before this
@@ -48,7 +48,7 @@ export class MobileAuthError extends Error {
 /**
  * Resolves the caller from the `Authorization: Bearer` header and confirms
  * they currently hold an active GUARDIAN membership somewhere. The mobile
- * API is guardian-only in this phase — see the clubcore-mobile plan — so
+ * API is guardian-only in this phase — see the backroom-mobile plan — so
  * this doubles as both authentication and the phase-1 scope boundary.
  * Re-checked on every request, same as the web app: a removed membership
  * takes effect on the next call, not just at token issuance.

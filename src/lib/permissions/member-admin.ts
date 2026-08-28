@@ -134,7 +134,7 @@ export async function checkInvite(
     if (holder) {
       return {
         ok: false,
-        reason: `Someone already holds the ${roleLabel(role).toLowerCase()} role at this club — ask them, or remove their access first.`,
+        reason: `Someone already holds the ${roleLabel(role).toLowerCase()} role at this club. Ask them, or remove their access first.`,
       };
     }
   }

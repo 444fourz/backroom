@@ -53,7 +53,7 @@ export function RowActions({
   if (disabledReason) {
     return (
       <span className="text-xs text-muted-foreground" title={disabledReason}>
-        —
+        -
       </span>
     );
   }

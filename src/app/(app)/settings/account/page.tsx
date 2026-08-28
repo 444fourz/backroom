@@ -20,7 +20,7 @@ export default async function AccountSettingsPage({
       <ActionToast param="success" message="Password updated" />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Account</h1>
-        <p className="text-sm text-muted-foreground">Security settings for your ClubCore account.</p>
+        <p className="text-sm text-muted-foreground">Security settings for your BackRoom account.</p>
       </div>
 
       <Card>

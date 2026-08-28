@@ -151,7 +151,7 @@ async function AttendanceCard({
     <Card className="md:col-span-2">
       <CardHeader>
         <CardTitle className="text-base">Attendance</CardTitle>
-        <CardDescription>Mark who showed up — updates instantly, no need to save.</CardDescription>
+        <CardDescription>Mark who showed up, updates instantly, no need to save.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {roster.length === 0 ? (
@@ -204,7 +204,7 @@ async function MatchStatsCard({
     <Card className="md:col-span-2">
       <CardHeader>
         <CardTitle className="text-base">Match stats</CardTitle>
-        <CardDescription>Goals and assists per player — save each row separately.</CardDescription>
+        <CardDescription>Goals and assists per player, save each row separately.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {roster.length === 0 ? (

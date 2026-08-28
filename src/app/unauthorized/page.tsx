@@ -40,8 +40,8 @@ export default async function UnauthorizedPage({
           // safeguarding promise made on the marketing site.
           <p className="mt-2 text-sm text-muted-foreground">
             {active
-              ? `A ${roleLabel(active.role).toLowerCase()} doesn't see this, and that separation is deliberate — `
-              : "That separation is deliberate — "}
+              ? `A ${roleLabel(active.role).toLowerCase()} doesn't see this, and that separation is deliberate: `
+              : "That separation is deliberate: "}
             there&apos;s no setting that opens it up. Ask your{" "}
             {roleLabel(detail.owner).toLowerCase()} if you need something from it.
           </p>

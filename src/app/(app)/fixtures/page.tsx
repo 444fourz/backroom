@@ -36,7 +36,7 @@ export default async function FixturesPage() {
 
   const matchDetailsText = nextEvent
     ? [
-        `${nextEvent.title} — ${nextEvent.team.name}`,
+        `${nextEvent.title} (${nextEvent.team.name})`,
         nextEvent.startTime.toLocaleString("en-GB", { weekday: "long", day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" }),
         nextEvent.meetTime ? `Meet at ${nextEvent.meetTime.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : null,
         `Venue: ${nextEvent.venueName}${nextEvent.venueAddress ? `, ${nextEvent.venueAddress}` : ""}`,
@@ -183,7 +183,7 @@ export default async function FixturesPage() {
                     </TableCell>
                     <TableCell>{event.team.name}</TableCell>
                     <TableCell>{event.venueName}</TableCell>
-                    <TableCell>{event.kitColour ?? "—"}</TableCell>
+                    <TableCell>{event.kitColour ?? "-"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -96,7 +96,7 @@ export default async function PlayersPage({
                         {arrearsSignal.has(player.id) ? (
                           <Badge variant="destructive">In arrears</Badge>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                     ) : null}

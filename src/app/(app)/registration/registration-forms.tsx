@@ -125,7 +125,7 @@ export function ConsentDialog({
   consents: { type: string; granted: boolean; previouslyGranted: boolean }[];
 }) {
   return (
-    <StepDialog trigger={trigger} title="Consent forms" description="Required each season — last season's answers are pre-filled as a starting point.">
+    <StepDialog trigger={trigger} title="Consent forms" description="Required each season, last season's answers are pre-filled as a starting point.">
       <form action={action} className="flex flex-col gap-4">
         <input type="hidden" name="playerId" value={playerId} />
         {consents.map((consent) => {

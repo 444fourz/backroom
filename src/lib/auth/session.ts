@@ -21,7 +21,7 @@ export async function requireCurrentUser() {
 
 /**
  * Auto-accepts any pending invite addressed to this user's email. This is
- * what closes the loop for someone who already has a ClubCore account and
+ * what closes the loop for someone who already has a BackRoom account and
  * gets invited to a second club (or a second role) — they never see an
  * "accept" step, the membership is just there next time they're signed in.
  * A brand-new person instead creates their account via the

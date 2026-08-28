@@ -12,7 +12,7 @@ function fail(token: string, message: string): never {
 }
 
 /**
- * Creates the account for someone with no existing ClubCore login. If an
+ * Creates the account for someone with no existing BackRoom login. If an
  * account for this email already exists, the invite is instead auto-accepted
  * the next time that person authenticates — see getActiveMembership() — so
  * this action only ever needs to handle the "brand new person" path.
@@ -34,7 +34,7 @@ export async function acceptInviteAction(formData: FormData): Promise<void> {
   if (!invite) fail(parsed.data.token, "This invite link is no longer valid.");
 
   const existing = await prisma.user.findUnique({ where: { email: invite.email } });
-  if (existing) fail(parsed.data.token, "An account already exists for this email — log in instead.");
+  if (existing) fail(parsed.data.token, "An account already exists for this email. Log in instead.");
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 

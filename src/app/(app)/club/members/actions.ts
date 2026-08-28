@@ -196,7 +196,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath(MEMBERS);
-  back(MEMBERS, "Invite created — copy the link to send it", "ok");
+  back(MEMBERS, "Invite created, copy the link to send it", "ok");
 }
 
 export async function revokeInviteAction(formData: FormData): Promise<void> {

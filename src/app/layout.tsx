@@ -25,7 +25,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClubCore",
+  title: "BackRoom",
   description: "Club management for grassroots sports clubs.",
 };
 

@@ -82,7 +82,7 @@ export async function createPaymentPlanAction(formData: FormData) {
     playerId: invoice.playerId,
     seasonId: invoice.seasonId,
     type: invoice.type,
-    description: `${invoice.description} — installment ${index + 1} of ${count}`,
+    description: `${invoice.description} (installment ${index + 1} of ${count})`,
     amountPence: index === count - 1 ? base + remainder : base,
     dueDate: new Date(now + (index + 1) * 30 * DAY_MS),
     status: "PENDING" as const,

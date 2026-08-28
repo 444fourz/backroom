@@ -1,4 +1,4 @@
-# ClubCore
+# BackRoom
 
 Club management platform for grassroots sports clubs — this is the first-draft
 scaffold of the product app (not the marketing site). See
@@ -31,19 +31,19 @@ Open http://localhost:3000 — you'll land on `/login`.
 
 ## Seeded accounts
 
-Every seeded user shares the same dev password: `clubcore-dev-2026` (see
+Every seeded user shares the same dev password: `backroom-dev-2026` (see
 `SEED_USER_PASSWORD` in `.env`).
 
 | Role | Email |
 |---|---|
-| Secretary | secretary@clubcore.dev |
-| Welfare officer | welfare@clubcore.dev |
-| Treasurer | treasurer@clubcore.dev |
-| Coach (Under 10s) | coach.u10@clubcore.dev |
-| Coach (Under 12s) | coach.u12@clubcore.dev |
-| Guardian | guardian1@clubcore.dev … guardian8@clubcore.dev |
+| Secretary | secretary@backroom.dev |
+| Welfare officer | welfare@backroom.dev |
+| Treasurer | treasurer@backroom.dev |
+| Coach (Under 10s) | coach.u10@backroom.dev |
+| Coach (Under 12s) | coach.u12@backroom.dev |
+| Guardian | guardian1@backroom.dev … guardian8@backroom.dev |
 
-`admin@clubcore.dev` / password `admin` is a dev-only account that holds
+`admin@backroom.dev` / password `admin` is a dev-only account that holds
 every role above as a separate membership on the same club — use
 [/select-club](http://localhost:3000/select-club) to switch between them.
 It doesn't bypass the role boundaries below; it just gives one login all
@@ -99,7 +99,7 @@ The site describes a few things that don't exist here yet. Tracked, not forgotte
   clubs only exist via `prisma db seed`.
 - **Free / Club / Pro subscription tiers.** Nothing tracks which plan a club is
   on. (Distinct from the `Invoice`/`Payment` models, which are *members paying
-  the club*, not *the club paying ClubCore*.)
+  the club*, not *the club paying BackRoom*.)
 - **A player login for ages 13+.** Deliberately not built — giving a minor
   their own credentials is a safeguarding decision, not an engineering default.
 - **Native iOS/Android apps.** The site says "in review with the app stores";

@@ -14,7 +14,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-svh flex-1 items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <Image src="/logo-full.png" alt="ClubCore" width={314} height={79} className="mb-2 h-8 w-auto" priority />
+          <Image src="/logo-full.png" alt="BackRoom" width={958} height={242} className="mb-2 h-8 w-auto" priority />
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
@@ -72,14 +72,14 @@ export default async function RegisterInvitePage({
 
   const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
 
-  const scopeNote = invite.team ? `${roleLabel(invite.role)} — ${invite.team.name}` : roleLabel(invite.role);
+  const scopeNote = invite.team ? `${roleLabel(invite.role)} (${invite.team.name})` : roleLabel(invite.role);
 
   if (existingUser) {
     return (
       <Shell>
         <CardTitle className="mb-2 text-lg">You already have an account</CardTitle>
         <CardDescription>
-          {invite.email} already has a ClubCore login. Sign in and {invite.club.name} will be added to your account
+          {invite.email} already has a BackRoom login. Sign in and {invite.club.name} will be added to your account
           as {scopeNote} automatically.
         </CardDescription>
         <Button asChild className="mt-4">

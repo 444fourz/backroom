@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const SEED_PASSWORD = process.env.SEED_USER_PASSWORD ?? "clubcore-dev-2026";
+const SEED_PASSWORD = process.env.SEED_USER_PASSWORD ?? "backroom-dev-2026";
 
 const CLUB_SLUG = "aston-rovers-fc";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -60,11 +60,11 @@ async function main() {
     });
   }
 
-  const secretary = await upsertUser("secretary@clubcore.dev", "Priya Secretary");
-  const welfare = await upsertUser("welfare@clubcore.dev", "Wendy Welfare");
-  const treasurer = await upsertUser("treasurer@clubcore.dev", "Tom Treasurer");
-  const coachU10 = await upsertUser("coach.u10@clubcore.dev", "Chris Coach");
-  const coachU12 = await upsertUser("coach.u12@clubcore.dev", "Cara Coach");
+  const secretary = await upsertUser("secretary@backroom.dev", "Priya Secretary");
+  const welfare = await upsertUser("welfare@backroom.dev", "Wendy Welfare");
+  const treasurer = await upsertUser("treasurer@backroom.dev", "Tom Treasurer");
+  const coachU10 = await upsertUser("coach.u10@backroom.dev", "Chris Coach");
+  const coachU12 = await upsertUser("coach.u12@backroom.dev", "Cara Coach");
 
   // Dev-only superuser: not a real role, just this one account holding every
   // membership at once so someone testing locally can switch (via
@@ -73,20 +73,20 @@ async function main() {
   // a throwaway dev credential, not a template for a real account.
   const adminPasswordHash = await bcrypt.hash("admin", 10);
   const admin = await prisma.user.upsert({
-    where: { email: "admin@clubcore.dev" },
+    where: { email: "admin@backroom.dev" },
     update: { name: "Dev Admin", passwordHash: adminPasswordHash },
-    create: { email: "admin@clubcore.dev", name: "Dev Admin", passwordHash: adminPasswordHash },
+    create: { email: "admin@backroom.dev", name: "Dev Admin", passwordHash: adminPasswordHash },
   });
 
   const guardianNames = [
-    ["guardian1@clubcore.dev", "Gail Guardian"],
-    ["guardian2@clubcore.dev", "Greg Guardian"],
-    ["guardian3@clubcore.dev", "Gemma Guardian"],
-    ["guardian4@clubcore.dev", "Gary Guardian"],
-    ["guardian5@clubcore.dev", "Gina Guardian"],
-    ["guardian6@clubcore.dev", "Glenn Guardian"],
-    ["guardian7@clubcore.dev", "Grace Guardian"],
-    ["guardian8@clubcore.dev", "George Guardian"],
+    ["guardian1@backroom.dev", "Gail Guardian"],
+    ["guardian2@backroom.dev", "Greg Guardian"],
+    ["guardian3@backroom.dev", "Gemma Guardian"],
+    ["guardian4@backroom.dev", "Gary Guardian"],
+    ["guardian5@backroom.dev", "Gina Guardian"],
+    ["guardian6@backroom.dev", "Glenn Guardian"],
+    ["guardian7@backroom.dev", "Grace Guardian"],
+    ["guardian8@backroom.dev", "George Guardian"],
   ] as const;
   const guardians = await Promise.all(guardianNames.map(([email, name]) => upsertUser(email, name)));
 

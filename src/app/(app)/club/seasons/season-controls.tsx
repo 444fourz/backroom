@@ -29,7 +29,7 @@ export function RolloverSeasonDialog({ action }: { action: (formData: FormData) 
           <DialogTitle>Roll over to a new season</DialogTitle>
           <DialogDescription>
             The current season closes and this one becomes active. Teams and players carry
-            forward automatically — registration, consents and invoices start fresh.
+            forward automatically. Registration, consents and invoices start fresh.
           </DialogDescription>
         </DialogHeader>
         <form action={action} className="flex flex-col gap-4">

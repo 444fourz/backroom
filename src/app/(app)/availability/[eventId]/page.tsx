@@ -168,7 +168,7 @@ async function GuardianResponseCard({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Let the coach know</CardTitle>
-        <CardDescription>Your response updates instantly — no need to save.</CardDescription>
+        <CardDescription>Your response updates instantly, no need to save.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {rows.map(({ player, response }) => (

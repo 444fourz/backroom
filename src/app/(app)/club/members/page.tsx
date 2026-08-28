@@ -99,7 +99,7 @@ export default async function MembersPage({
                     <TableCell>
                       <Badge variant="secondary">{roleLabel(member.role)}</Badge>
                     </TableCell>
-                    <TableCell>{member.team?.name ?? "—"}</TableCell>
+                    <TableCell>{member.team?.name ?? "-"}</TableCell>
                     <TableCell className="text-right">
                       <RowActions
                         label={member.user.name}
@@ -169,7 +169,7 @@ export default async function MembersPage({
           <CardHeader>
             <CardTitle className="text-base">Pending invites</CardTitle>
             <CardDescription>
-              Email delivery isn&apos;t wired up yet — copy each link and send it yourself.
+              Email delivery isn&apos;t wired up yet, copy each link and send it yourself.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">

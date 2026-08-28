@@ -51,7 +51,7 @@ export function AddDocumentDialog({ action }: { action: (formData: FormData) => 
         <DialogHeader>
           <DialogTitle>Add a document</DialogTitle>
           <DialogDescription>
-            There&apos;s no file storage yet, so paste a link — a Google Drive or SharePoint share link
+            There&apos;s no file storage yet, so paste a link: a Google Drive or SharePoint share link
             works fine.
           </DialogDescription>
         </DialogHeader>

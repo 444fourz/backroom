@@ -18,8 +18,8 @@ export function Sidebar({ role }: { role: MembershipRole }) {
   return (
     <aside className="hidden w-60 shrink-0 border-r bg-sidebar md:flex md:flex-col">
       <div className="flex h-14 items-center gap-2 border-b px-4">
-        <Image src="/logo-icon.png" alt="" width={80} height={79} className="size-7" priority />
-        <span className="text-lg font-semibold tracking-tight">ClubCore</span>
+        <Image src="/logo-icon.png" alt="" width={141} height={141} className="size-7" priority />
+        <span className="text-lg font-semibold tracking-tight">BackRoom</span>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 p-3">
         {items.map((item) => {

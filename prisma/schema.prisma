@@ -1,4 +1,4 @@
-// ClubCore data model — first-draft scaffold.
+// BackRoom data model — first-draft scaffold.
 // See C:\Users\nayee\.claude\plans\logical-doodling-puppy.md for the design rationale.
 
 generator client {

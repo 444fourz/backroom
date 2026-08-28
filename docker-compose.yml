@@ -3,13 +3,13 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: clubcore
-      POSTGRES_PASSWORD: clubcore
-      POSTGRES_DB: clubcore
+      POSTGRES_USER: backroom
+      POSTGRES_PASSWORD: backroom
+      POSTGRES_DB: backroom
     ports:
       - "5432:5432"
     volumes:
-      - clubcore_postgres_data:/var/lib/postgresql/data
+      - backroom_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  clubcore_postgres_data:
+  backroom_postgres_data:

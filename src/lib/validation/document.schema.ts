@@ -8,6 +8,6 @@ export const addDocumentSchema = z.object({
   fileUrl: z
     .string()
     .trim()
-    .refine((value) => /^https?:\/\/.+/i.test(value), "Include https:// — this is a link, not a file upload"),
+    .refine((value) => /^https?:\/\/.+/i.test(value), "Include https:// (this is a link, not a file upload)"),
   visibility: z.array(z.enum(["WELFARE_OFFICER", "TREASURER", "COACH", "GUARDIAN"])),
 });

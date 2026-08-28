@@ -62,7 +62,7 @@ export default async function AccessLogPage() {
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">{entry.actor.name}</TableCell>
                     <TableCell>{ACTION_LABEL[entry.action] ?? entry.action}</TableCell>
-                    <TableCell className="text-muted-foreground">{entry.subjectName ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{entry.subjectName ?? "-"}</TableCell>
                     <TableCell className="text-right text-muted-foreground">{timeAgo(entry.createdAt)}</TableCell>
                   </TableRow>
                 ))}

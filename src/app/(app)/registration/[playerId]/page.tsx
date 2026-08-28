@@ -230,7 +230,7 @@ function RegistrationWizard({ data }: { data: WizardData }) {
         <form action={submitRegistrationAction}>
           <input type="hidden" name="playerId" value={player.id} />
           <Button type="submit" className="w-full" size="lg">
-            {stepsLeft > 1 ? `Continue — ${stepsLeft} steps left` : "Submit registration"}
+            {stepsLeft > 1 ? `Continue (${stepsLeft} steps left)` : "Submit registration"}
           </Button>
         </form>
       )}

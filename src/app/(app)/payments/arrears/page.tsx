@@ -28,6 +28,10 @@ function formatPence(pence: number) {
   return (pence / 100).toLocaleString("en-GB", { style: "currency", currency: "GBP" });
 }
 
+function familyCountLabel(count: number) {
+  return `${count} ${count === 1 ? "family" : "families"}`;
+}
+
 const BUCKET_LABEL: Record<string, string> = { "0-30": "0–30 days", "30-60": "30–60 days", "60+": "60+ days" };
 
 function reminderMailto(contact: { name: string; email: string }, description: string, pence: number, dueDate: Date) {
@@ -72,11 +76,11 @@ export default async function ArrearsPage() {
             <p className="text-2xl font-semibold tracking-tight text-destructive">
               {formatPence(summary?.totalPence ?? 0)}
             </p>
-            <p className="text-xs text-muted-foreground">{summary?.familyCount ?? 0} families</p>
+            <p className="text-xs text-muted-foreground">{familyCountLabel(summary?.familyCount ?? 0)}</p>
           </CardContent>
         </Card>
       </div>
-      <p className="-mt-2 text-xs text-muted-foreground">Paid straight into the club&apos;s account. Never held by ClubCore.</p>
+      <p className="-mt-2 text-xs text-muted-foreground">Paid straight into the club&apos;s account. Never held by BackRoom.</p>
 
       {summary && summary.totalPence > 0 ? (
         <Card>
@@ -91,7 +95,7 @@ export default async function ArrearsPage() {
                     <TableCell className={bucket.key === "60+" && bucket.pence > 0 ? "text-destructive" : undefined}>
                       {BUCKET_LABEL[bucket.key]}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{bucket.familyCount} families</TableCell>
+                    <TableCell className="text-muted-foreground">{familyCountLabel(bucket.familyCount)}</TableCell>
                     <TableCell className="text-right font-medium">{formatPence(bucket.pence)}</TableCell>
                   </TableRow>
                 ))}

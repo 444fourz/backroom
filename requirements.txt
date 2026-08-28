@@ -1,4 +1,4 @@
-ClubCore — setup requirements
+BackRoom — setup requirements
 ==============================
 
 This is a Node.js/TypeScript project, not Python — there's no pip install
@@ -19,8 +19,8 @@ The real dependency manifest is package.json (handled by `npm install` below).
 
 2. CLONE AND INSTALL DEPENDENCIES
 ----------------------------------
-  git clone https://github.com/444fourz/clubcore.git
-  cd clubcore
+  git clone https://github.com/444fourz/backroom.git
+  cd backroom
   npm install
 
 
@@ -66,7 +66,7 @@ This creates one demo club ("Aston Rovers FC") with an admin, a treasurer,
 two coaches, eight guardians, and ~10 players — enough to log in as every
 role and see the permission boundaries for yourself. Every seeded account
 shares the password set as SEED_USER_PASSWORD in your .env (default:
-clubcore-dev-2026). Full list of seeded emails is in README.md.
+backroom-dev-2026). Full list of seeded emails is in README.md.
 
 
 7. RUN THE APP
