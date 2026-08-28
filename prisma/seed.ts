@@ -138,6 +138,7 @@ async function main() {
   await prisma.playerMedicalInfo.deleteMany({ where: { player: { clubId: club.id } } });
   await prisma.guardianPlayer.deleteMany({ where: { player: { clubId: club.id } } });
   await prisma.player.deleteMany({ where: { clubId: club.id } });
+  await prisma.sponsor.deleteMany({ where: { clubId: club.id } });
 
   // --- Players (5 per team), each with medical info and 1-2 guardians ---
   const u10Names = [
@@ -346,10 +347,33 @@ async function main() {
     }
   }
 
-  // --- Invoices: one subs invoice per player (mixed) + one match-fee example ---
-  const invoiceStatuses = ["PAID", "PENDING", "OVERDUE", "PAID", "PARTIAL"] as const;
+  // --- Invoices: one SUBS invoice per player, hand-picked per index so every
+  // status (including the arrears-aging buckets: 0-30/30-60/60+) and figure
+  // the payments/arrears pages compute has real data behind it, not just
+  // one lucky coincidence. ---
+  const SUBS_AMOUNT_PENCE = 12000;
+  type SubsScenario = {
+    status: "PAID" | "PENDING" | "OVERDUE" | "PARTIAL" | "WAIVED";
+    dueDateOffset: number;
+    payment?: { amountPence: number; paidOffset: number };
+    discountPence?: number;
+    waivedReason?: string;
+  };
+  const subsScenarios: SubsScenario[] = [
+    { status: "PAID", dueDateOffset: -50, payment: { amountPence: SUBS_AMOUNT_PENCE, paidOffset: -52 } },
+    { status: "PAID", dueDateOffset: -4, payment: { amountPence: SUBS_AMOUNT_PENCE, paidOffset: -2 } }, // paid this month, feeds the monthly collection figure
+    { status: "PENDING", dueDateOffset: 25 },
+    { status: "PENDING", dueDateOffset: 6 },
+    { status: "OVERDUE", dueDateOffset: -12 }, // 0-30 bucket
+    { status: "OVERDUE", dueDateOffset: -22 }, // 0-30 bucket, second family
+    { status: "OVERDUE", dueDateOffset: -45 }, // 30-60 bucket
+    { status: "OVERDUE", dueDateOffset: -75 }, // 60+ bucket
+    { status: "PARTIAL", dueDateOffset: -18, payment: { amountPence: 6000, paidOffset: -16 } },
+    { status: "WAIVED", dueDateOffset: -30, discountPence: SUBS_AMOUNT_PENCE, waivedReason: "Hardship — approved by committee" },
+  ];
+
   for (const [index, player] of allPlayers.entries()) {
-    const status = invoiceStatuses[index % invoiceStatuses.length];
+    const scenario = subsScenarios[index % subsScenarios.length];
     const invoice = await prisma.invoice.create({
       data: {
         clubId: club.id,
@@ -357,17 +381,20 @@ async function main() {
         seasonId: season.id,
         type: "SUBS",
         description: "2025/26 season subs",
-        amountPence: 12000,
-        dueDate: daysFromNow(status === "OVERDUE" ? -10 : 20),
-        status,
+        amountPence: SUBS_AMOUNT_PENCE,
+        dueDate: daysFromNow(scenario.dueDateOffset),
+        status: scenario.status,
+        discountPence: scenario.discountPence,
+        waivedReason: scenario.waivedReason,
       },
     });
-    if (status === "PAID" || status === "PARTIAL") {
+    if (scenario.payment) {
       await prisma.payment.create({
         data: {
           invoiceId: invoice.id,
-          amountPence: status === "PARTIAL" ? 6000 : 12000,
+          amountPence: scenario.payment.amountPence,
           method: "BANK_TRANSFER",
+          paidAt: daysFromNow(scenario.payment.paidOffset),
           recordedByUserId: treasurer.id,
         },
       });
@@ -386,6 +413,88 @@ async function main() {
       status: "PENDING",
     },
   });
+
+  // A handful of KIT invoices for fee-type variety on the payments pages.
+  const kitScenarios = [
+    { status: "PAID" as const, dueDateOffset: -40, payment: 2200 },
+    { status: "PENDING" as const, dueDateOffset: 15 },
+    { status: "OVERDUE" as const, dueDateOffset: -14 },
+  ];
+  for (const [index, scenario] of kitScenarios.entries()) {
+    const player = u12Players[(index + 1) % u12Players.length];
+    const invoice = await prisma.invoice.create({
+      data: {
+        clubId: club.id,
+        playerId: player.id,
+        seasonId: season.id,
+        type: "KIT",
+        description: "Home kit — shirt and shorts",
+        amountPence: 2200,
+        dueDate: daysFromNow(scenario.dueDateOffset),
+        status: scenario.status,
+      },
+    });
+    if (scenario.payment) {
+      await prisma.payment.create({
+        data: {
+          invoiceId: invoice.id,
+          amountPence: scenario.payment,
+          method: "CARD",
+          paidAt: daysFromNow(scenario.dueDateOffset - 2),
+          recordedByUserId: treasurer.id,
+        },
+      });
+    }
+  }
+
+  // A tournament fee split into a payment plan (installments-as-invoices —
+  // see createPaymentPlanAction) so that feature has real data to look at:
+  // one installment paid, one overdue, one not due yet. The original
+  // invoice becomes SUPERSEDED and drops out of arrears; the installments
+  // are what actually show up there.
+  const tournamentOriginal = await prisma.invoice.create({
+    data: {
+      clubId: club.id,
+      playerId: u10Players[2].id,
+      seasonId: season.id,
+      type: "TOURNAMENT",
+      description: "End-of-season tournament fee — payment plan",
+      amountPence: 18000,
+      dueDate: daysFromNow(-60),
+      status: "SUPERSEDED",
+    },
+  });
+  const installmentScenarios = [
+    { status: "PAID" as const, dueDateOffset: -30, payment: 6000 },
+    { status: "OVERDUE" as const, dueDateOffset: -3 },
+    { status: "PENDING" as const, dueDateOffset: 27 },
+  ];
+  for (const scenario of installmentScenarios) {
+    const installment = await prisma.invoice.create({
+      data: {
+        clubId: club.id,
+        playerId: u10Players[2].id,
+        seasonId: season.id,
+        type: "TOURNAMENT",
+        description: "End-of-season tournament fee — installment",
+        amountPence: 6000,
+        dueDate: daysFromNow(scenario.dueDateOffset),
+        status: scenario.status,
+        parentInvoiceId: tournamentOriginal.id,
+      },
+    });
+    if (scenario.payment) {
+      await prisma.payment.create({
+        data: {
+          invoiceId: installment.id,
+          amountPence: scenario.payment,
+          method: "BANK_TRANSFER",
+          paidAt: daysFromNow(scenario.dueDateOffset - 2),
+          recordedByUserId: treasurer.id,
+        },
+      });
+    }
+  }
 
   // --- Registration & consent (mixed) ---
   const registrationStatuses = ["COMPLETE", "IN_PROGRESS", "NOT_STARTED"] as const;
@@ -495,6 +604,15 @@ async function main() {
   await prisma.credential.updateMany({
     where: { clubId: club.id, userId: coachU10.id, type: "DBS" },
     data: { documentId: dbsProof.id },
+  });
+
+  // --- Sponsors ---
+  await prisma.sponsor.createMany({
+    data: [
+      { clubId: club.id, name: "Perry Barr Autos", websiteUrl: "https://example.com/perry-barr-autos" },
+      { clubId: club.id, name: "Villa Road Chemist", websiteUrl: "https://example.com/villa-road-chemist" },
+      { clubId: club.id, name: "Aston Bites Cafe", websiteUrl: null },
+    ],
   });
 
   console.log("Seed complete.");
