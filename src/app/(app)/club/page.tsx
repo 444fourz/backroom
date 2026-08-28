@@ -132,11 +132,11 @@ export default async function ClubOverviewPage() {
       </Card>
 
       <div className="flex gap-2">
-        <Button variant="outline" disabled>
-          Invite member
+        <Button variant="outline" asChild>
+          <Link href="/club/members">Invite member</Link>
         </Button>
-        <Button variant="outline" disabled>
-          Season rollover
+        <Button variant="outline" asChild>
+          <Link href="/club/seasons">Season rollover</Link>
         </Button>
       </div>
     </div>

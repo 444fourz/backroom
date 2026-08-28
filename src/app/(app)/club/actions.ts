@@ -6,6 +6,7 @@ import { requireCapability } from "@/lib/permissions/guard";
 import { prisma } from "@/lib/db/prisma";
 import { writeAuditLog } from "@/lib/audit/log";
 import { addSponsorSchema } from "@/lib/validation/club.schema";
+import { rolloverSeasonSchema } from "@/lib/validation/season.schema";
 
 export async function updateArrearsSignalAction(formData: FormData) {
   const { user, active } = await requireCapability("club:manage");
@@ -78,4 +79,53 @@ export async function removeSponsorAction(formData: FormData) {
   });
 
   revalidatePath("/club");
+}
+
+export async function rolloverSeasonAction(formData: FormData) {
+  const { user, active } = await requireCapability("club:manage");
+
+  const parsed = rolloverSeasonSchema.safeParse({
+    label: formData.get("label"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+  });
+  if (!parsed.success) return;
+
+  const existing = await prisma.season.findUnique({
+    where: { clubId_label: { clubId: active.clubId, label: parsed.data.label } },
+  });
+  if (existing) return;
+
+  // Teams and players aren't season-scoped, so they carry forward as-is —
+  // rollover just closes the old season and opens the new one. Invoices,
+  // registration forms and consents are seasonId-scoped, so they naturally
+  // start fresh for the new season without any copying.
+  const season = await prisma.$transaction(async (tx) => {
+    await tx.season.updateMany({
+      where: { clubId: active.clubId, isActive: true },
+      data: { isActive: false },
+    });
+    return tx.season.create({
+      data: {
+        clubId: active.clubId,
+        label: parsed.data.label,
+        startDate: parsed.data.startDate,
+        endDate: parsed.data.endDate,
+        isActive: true,
+      },
+    });
+  });
+
+  await writeAuditLog({
+    actorUserId: user.id,
+    action: "season.rolledOver",
+    entityType: "Season",
+    entityId: season.id,
+    metadata: { label: season.label },
+  });
+
+  revalidatePath("/club");
+  revalidatePath("/club/seasons");
+  revalidatePath("/dashboard");
+  revalidatePath("/registration");
 }
