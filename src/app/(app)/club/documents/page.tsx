@@ -4,7 +4,6 @@ import { requireCapability } from "@/lib/permissions/guard";
 import { listDocumentsForClub } from "@/lib/data/club";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,6 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+import { addDocumentAction, removeDocumentAction } from "./actions";
+import { AddDocumentDialog, RemoveDocumentButton } from "./document-controls";
 
 export default async function DocumentsPage() {
   const { active } = await requireCapability("document:manage");
@@ -25,9 +27,7 @@ export default async function DocumentsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
           <p className="text-sm text-muted-foreground">Policies, consent forms and proof of credentials.</p>
         </div>
-        <Button variant="outline" disabled>
-          Upload document
-        </Button>
+        <AddDocumentDialog action={addDocumentAction} />
       </div>
 
       {documents.length === 0 ? (
@@ -42,15 +42,32 @@ export default async function DocumentsPage() {
                   <TableHead>Category</TableHead>
                   <TableHead>Uploaded by</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead className="w-10 text-right">
+                    <span className="sr-only">Remove</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {documents.map((document) => (
                   <TableRow key={document.id}>
-                    <TableCell className="font-medium">{document.title}</TableCell>
+                    <TableCell className="font-medium">
+                      <a
+                        href={document.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {document.title}
+                      </a>
+                    </TableCell>
                     <TableCell className="capitalize">{document.category.toLowerCase().replaceAll("_", " ")}</TableCell>
                     <TableCell>{document.uploadedBy.name}</TableCell>
                     <TableCell>{document.createdAt.toLocaleDateString("en-GB")}</TableCell>
+                    <TableCell className="text-right">
+                      {document.category === "CREDENTIAL_PROOF" ? null : (
+                        <RemoveDocumentButton action={removeDocumentAction} documentId={document.id} />
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
